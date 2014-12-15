@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Kevin Hartig">
+
+    <title>Nebarti - Disruptive Software Technologies</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="assets/css/bootstrap.css" rel="stylesheet">
+
+    <!-- Add custom CSS here -->
+    <link href="assets/css/modern-business.css" rel="stylesheet">
+    <link href="assets/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+  </head>
+
+  <body>
+  
+    <div id="messageModal"></div>
+
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <!-- You'll want to use a responsive image option so this logo looks good on devices - I recommend using something like retina.js (do a quick Google search for it and you'll find it) -->
+          <a class="navbar-brand" href="index.html">Nebarti - Disruptive Software Technologies</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="about.html">About</a></li>
+            <li><a href="services.html">Services</a></li>
+            <li><a href="portfolio-1-col-page1.html">Portfolio</a></li>
+            <li><a data-toggle="modal" data-target="#contact">Contact</a></li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container -->
+    </nav>
+
+    <!-- Page Content -->
+
+    <div class="container">
+      
+      <div class="row">
+      
+        <div class="col-lg-12">
+          <h1 class="page-header">Services <small>What We Do</small></h1>
+          <ol class="breadcrumb">
+            <li><a href="index.html">Home</a></li>
+            <li class="active">Services</li>
+          </ol>
+        </div>
+
+      </div><!-- /.row -->
+
+      <div class="row">
+      
+        <div class="col-lg-12">
+          <img class="img-responsive" src="assets/images/inspired.jpeg">
+        </div>
+
+      <!-- Service Tabs -->
+
+      <div class="row">
+
+        <div class="col-lg-12">
+          <h2 class="page-header">Services</h2>
+          <ul id="myTab" class="nav nav-tabs">
+            <li class="active"><a href="#service-one" data-toggle="tab">Business Analysis</a></li>
+            <li><a href="#service-two" data-toggle="tab">Data Analytics</a></li>
+            <li><a href="#service-three" data-toggle="tab">Distributed Computing</a></li>
+            <li><a href="#service-four" data-toggle="tab">Software Architecture & Design</a></li>
+          </ul>
+          <div id="myTabContent" class="tab-content">
+          
+            <div class="tab-pane fade in active" id="service-one">
+              <i class="fa fa-gear pull-left fa-4x"></i>
+              <div>
+                Evaluation and understanding the needs of the business or business process, its tactical strategic direction, 
+                and identification of initiatives and processes which drive function to achieve those goals. This includes:
+                <br/><br/>
+                <ul>
+                  <li>Developing business cases</li>
+                  <li>Requirements definition planning and management</li>
+                  <li>Architectural analysis</li>
+                  <li>Business process analysis</li>
+                  <li>Structural analysis</li>
+                  <li>Data storage analysis</li>
+                  <li>Process improvement</li>
+                  <li>Implementation validation</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="tab-pane fade" id="service-two">
+              <i class="fa fa-gears pull-left fa-4x"></i>
+              <div>
+                Focused primarily on analyzing unstructured social media text to extract sentiment, 
+                entity relationships and pattern discovery for predictions. Also work with:
+                <br/><br/><br/>
+                <ul>
+                  <li>developing algorithms for mining data in databases</li>
+                  <li>statistical analysis</li>
+                  <li>recommendation engines</li>
+                  <li>image recognition</li>
+                </ul> 
+              </div>
+            </div>
+            
+            <div class="tab-pane fade" id="service-three">
+              <i class="fa fa-magic pull-left fa-4x"></i>
+              <div>
+                Software design and development of distributed systems for intra and internet capable systems.
+                Have developed self-managing and self-monitoring infrastructures to execute distrubuted software 
+                components with the ability to dynamically apply behaviors and SLAs across the distributed components.
+                Also have desiged and built standard SAAS and Enterprise systems in static and virtualized resource environments.
+              </div>
+            </div>
+            
+            <div class="tab-pane fade" id="service-four">
+              <i class="fa fa-flask pull-left fa-4x"></i>
+              <div>
+                Exceptional talents in the management, architecture, design, construction and delivery 
+                of large and small software systems, using proven methodologies. Consistently define 
+                the best application of products, technologies and business practices, for 
+                large and small clients.
+              </div>
+            </div>
+            
+          </div>
+        </div>
+
+      </div><!-- /.row -->
+
+    </div><!-- /.container -->
+    
+
+    <div class="container">
+
+      <hr>
+
+      <footer>
+        <div class="row">
+          <div class="col-lg-12">
+            <p>Copyright &copy; 2010-2014 Nebarti, LLC. All Rights Reserved</p>
+          </div>
+        </div>
+      </footer>
+
+    </div><!-- /.container -->
+
+    <!-- JavaScript -->
+    <script src="assets/js/jquery-1.10.2.js"></script>
+    <script src="assets/js/bootstrap.js"></script>
+    <script src="assets/js/modern-business.js"></script>
+    <script src="assets/js/email.js"></script><script>
+        $("#messageModal").load( "./messageModal.html" );
+        
+        // google analytics
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-34681660-1']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+            // google analytics
+    </script>
+  </body>
+</html>

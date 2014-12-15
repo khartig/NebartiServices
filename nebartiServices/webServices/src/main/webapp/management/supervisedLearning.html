@@ -1,0 +1,542 @@
+<!-- 
+   Copyright Nebarti © 2013 All rights reserved.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>Nebarti - Supervised Learning</title>
+        <link rel="shortcut icon" href="../images/favicon.ico"/>
+        <meta name="keywords" content="" />
+        <meta name="description" content="" />
+        <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" />
+        <link rel="stylesheet" href="../css/jquery.multiselect.css" type="text/css" />
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/themes/base/jquery-ui.css" type="text/css"/>
+        <link rel="stylesheet" href="../css/navigation-menu.css" type="text/css" />
+        
+        <script type="text/javascript" src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>        
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+        
+<!--        dialog doesn't work in 1.9m8?-->
+<!--        <script type="text/javascript" src="../js/jquery-ui-1.9.0m8.min.js"></script>-->
+        
+        <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+        <script type="text/javascript" src="../js/jquery.form.js"></script>
+        <script type="text/javascript" src="../js/jquery.dataTables.js"></script>
+        <script type="text/javascript" src="../js/jquery.dataTables.editable.js"></script>
+        <script type="text/javascript" src="../js/jquery.jeditable.js"></script>
+        <script type="text/javascript" src="../js/jquery.dataTables.columnFilter.js"></script>
+
+        <script type="text/javascript">
+            $(document).ready(function() {               
+                $('#addForm_div').hide(); // hides the popup dialog html form
+                
+                // query for current models in db
+                $.get("/services/configparams/models", { } ,
+                function(models) {
+                    if (models.length > 1) {
+                        for (var i in models) {
+                            if (models[i] != -1) {
+                                $('#modelSelector').append('<option value=' + models[i].name +'>' + models[i].visibleName + '</option>');                
+                            }
+                        }
+                    } else {
+                        $('#modelSelector').append('<option value=' + models.name + '>' + models.visbleName + '</option>');
+                    }
+                },
+                "json");
+                
+                // handle model selection change
+                $(function() {
+                    $('#modelSelector').change(function() { 
+                        currentSelectedModelName = $('#modelSelector option:selected').val();
+                        if (currentSelectedModelName !== 'selectModel') {
+                            clearTable();
+                            $('#documents_div').prepend('<button id="btnRemoveDuplicates" class="stylized_button">Remove Dups</button>');
+                            $('#documents_div').prepend('<button id="btnReclassifyModel" class="stylized_button">Reclassify Text</button>');
+                            $('#documents_div').prepend('<button id="btnUpdateModel" class="stylized_button">Build Model</button>');
+                            $('#documents_div').prepend('<button id="btnAddDocument" class="stylized_button">Add New Document...</button>');
+                            // add document button control
+                            $("#btnAddDocument")
+                                .click(function() {
+                                    $.ajax({
+                                        async: false,
+                                        type: "GET",
+                                        url: "/services/models/classifications/" + currentSelectedModelName + "/",
+                                        success: function(obj) {
+                                            $('#addFormClassification').empty();
+                                            var classifications = obj.classifications;
+                                            for (var i in classifications) {
+                                                $('#addFormClassification').append("<option>" + classifications[i] + "</option>");
+                                            }
+                                        }
+                                    });
+                                    $("#addForm_div").dialog("open");
+                                });
+                                
+                            // rebuild model button control
+                            $("#btnUpdateModel")
+                                .click(function() {
+                                    var content = JSON.stringify({
+                                        "reclassify": true  // means just build model
+                                    });
+                                    
+                                    $.ajax({
+                                        async: false,
+                                        type: "PUT",
+                                        contentType: 'application/json',
+                                        url: "/services/models/" + currentSelectedModelName + "/",
+                                        data: content,
+                                        success: function(obj) {
+                                            alert('Model rebuilt successfully.');
+                                        },
+                                        error: function(jqXHR, textStatus, errorThrown){
+                                           alert('Model rebuild error: ' + textStatus);
+                                        }
+                                    });
+                                    
+                                }); 
+                                
+                            // reclassify model button control
+                            $("#btnReclassifyModel")
+                                .click(function() {
+                                    var content = JSON.stringify({
+                                        "reclassify": false  // means just reclassify text
+                                    });
+                                    
+                                    $.ajax({
+                                        async: false,
+                                        type: "PUT",
+                                        contentType: 'application/json',
+                                        url: "/services/models/" + currentSelectedModelName + "/",
+                                        data: content,
+                                        success: function(obj) {
+                                            alert('Model reclassified successfully.');
+                                        },
+                                        error: function(jqXHR, textStatus, errorThrown){
+                                           alert('Model reclassify error: ' + textStatus);
+                                        }
+                                    });
+                                    
+                                });
+                                
+                            // remove duplicate documents button control
+                            $("#btnRemoveDuplicates")
+                                .click(function() {
+                                    
+                                    $.ajax({
+                                        async: false,
+                                        type: "DELETE",
+                                        contentType: 'application/json',
+                                        url: "/services/models/removeduplicates/" + currentSelectedModelName + "/",
+                                        success: function(obj) {
+                                            var oTable = $('#documents_table').dataTable();
+                                            oTable.fnDraw(false);
+                                            alert('Duplicate documents removed successfully.');
+                                        },
+                                        error: function(jqXHR, textStatus, errorThrown){
+                                           alert('Duplicate document removal error: ' + textStatus);
+                                        }
+                                    });
+                                });
+                                   
+                            $('#documents_div').append('<table id="documents_table" border="0" cellpadding="5" cellspacing="0" class="records"></table>');
+                            drawSupervisedLearningTable();
+                        } else {
+                            clearTable();
+                        }
+                 
+                    })
+                });
+            
+                     
+           // add form div definitions
+           $('#addForm_div').dialog ({
+               autoOpen: false,
+               modal: true,
+               buttons: {
+                   "Add": function() {
+                       if ($('#formText').val() == "") {
+                           alert("Must enter text.");
+                       } else {
+                           var validated = "?validated=";
+                           if ( $('#addFormValidated').is(':checked') ) {
+                               validated += "true";
+                           } else {
+                               validated += "false";
+                           }
+                           
+                           var useInModel = "&useInModel=";
+                           if ( $('#addFormUseInModel').is(':checked') ) {
+                               useInModel += "true";
+                           } else {
+                               useInModel += "false";
+                           }
+                           
+                           var latitude = "&latitude=0.0";
+                           var longitude = "&longitude=0.0";
+                           var modelName = "&modelName=" + currentSelectedModelName;
+                           
+                           var classification = "&classification=" + $('#addFormClassification option:selected').val();
+                           var score = "&score=-1000.00";
+                           var text = "&text=" + $('#formText').val();
+                           $.ajax({
+                               type: 'POST',
+                               contentType: 'application/json',
+                               url: "/services/models/classifiedtext/"+ validated + useInModel + longitude + latitude + modelName + classification + score + text,
+                               success: function(data, textStatus, jqXHR){
+                                   var oTable = $('#documents_table').dataTable();
+                                   oTable.fnDraw(false);
+                                   alert('Document added successfully');
+                               },
+                               error: function(jqXHR, textStatus, errorThrown){
+                                   alert('addDocument error: ' + textStatus);
+                               }
+                           });
+                           $('#formAddDocument')[0].reset();
+                           $('#addForm_div').dialog( "close" );
+                       }             
+                   },
+                   "Clear": function() {
+                       $('#formAddDocument')[0].reset();
+                   }
+              },
+              close: function() {
+                  $('#formAddDocument')[0].reset();	
+              }
+           });
+            
+            
+         }); // end of $(document).ready(function()
+                
+           function updateDocument(element) {
+               var oTable = $('#documents_table').dataTable();
+               var row = oTable.fnGetData(element);
+               var isSelected;
+               var isUseInModel;
+               var validatedElementId = "#validated_" + element._DT_RowIndex;
+               var useInModelElementId = "#useInModel_" + element._DT_RowIndex;
+               
+               if ($(validatedElementId).is(':checked')) {
+                   isSelected = "true";
+               } else {
+                   isSelected = "false";
+               }
+               
+               if ($(useInModelElementId).is(':checked')) {
+                   isUseInModel = "true";
+               } else {
+                   isUseInModel = "false";
+               }
+               
+               var content = JSON.stringify({
+                       "id": element.childNodes[0].childNodes[1].value,
+                       "createdDate": "",
+                       "updatedDate": "",
+                       "useInModel": isUseInModel,
+                       "latitude": "",
+                       "longitude": "",
+                       "modelName": currentSelectedModelName,
+                       "validated": isSelected,
+                       "classification": element.childNodes[3].childNodes[0].value,
+                       "score": "0.0",
+                       "text": row.text,
+                       "gender": "",
+                       "age": ""
+                   });
+                   
+               $.ajax({
+                   type: 'PUT',
+                   contentType: 'application/json',
+                   url: "/services/models/classifiedtext/" + element.childNodes[0].childNodes[1].value,
+                   data: content,
+                   success: function(data, textStatus, jqXHR){
+                       alert('Document updated successfully');
+//                       oTable.fnDraw(false); // redraws the table just at the current page
+                   },
+                   error: function(jqXHR, textStatus, errorThrown){
+                      alert('updateDocument error: ' + textStatus);
+                   }
+                });
+           }
+           
+           function deleteDocument(element) {
+               var oTable = $('#documents_table').dataTable();
+               var row = oTable.fnGetData(element);
+               
+               var modelName = JSON.stringify({
+                       "modelName": currentSelectedModelName
+                   });
+               
+               $.ajax({
+                   type: 'DELETE',
+                   contentType: 'application/json',
+                   url: "/services/models/classifiedtext/" + element.childNodes[0].childNodes[1].value,
+                   data: modelName,
+                   success: function(data, textStatus, jqXHR){
+//                       oTable.fnDraw(oTable.fnSettings());
+                       oTable.fnDraw(false);
+                       alert('Document deleted successfully');
+                   },
+                   error: function(jqXHR, textStatus, errorThrown){
+                      alert('deleteDocument error: ' + textStatus);
+                   }
+                });               
+           }
+                   
+           function clearTable() {
+               if ($.fn.DataTable.fnIsDataTable(document.getElementById('documents_table'))) {
+                   $('#btnAddDocument').remove();
+                   $('#btnUpdateModel').remove();
+                   $('#btnReclassifyModel').remove();
+                   var oTable = $('#documents_table').dataTable();
+                   oTable.fnClearTable();
+                   oTable.fnDestroy();
+                   $('#documents_table').remove();
+               }   
+           }
+           
+           function defineCheckboxElement(name, rowNum, checked) {
+               var elementText = '<input type="checkbox" ';
+               elementText += 'id="' + name+rowNum + '" ';
+               
+               if (checked) {
+                   elementText += 'checked="checked" ';
+               } 
+               
+               elementText += 'onclick="\
+                                   if(this.checked) { \
+                                       function(this.checked = false) \
+                                   } else { \
+                                       function(this.checked = true) \
+                                   } "  />';
+               return elementText;
+           }
+                       
+           function drawSupervisedLearningTable() {
+               var classifications;
+                  
+               $.ajax({
+                   async: false,
+                   type: "GET",
+                   url: "/services/models/classifications/" + currentSelectedModelName + "/",
+                   success: function(obj) {
+                       classifications = obj.classifications;
+                   }
+               });
+                  
+                  var oTable = $('#documents_table').dataTable( {
+                    "sDom": '<"H"lr>t<"F"ip>',
+                    "bJQueryUI": true,
+                    "bProcessing": true,
+                    "bServerSide": true,
+                    "bPaginate": true,
+                    "sPaginationType": "full_numbers",
+                    "sAjaxSource": "/services/models/documents/" + currentSelectedModelName + "/",
+                    "oLanguage": {
+                        "sZeroRecords": "No records matched search criteria.",
+                        "sEmptyTable": "No records matched search criteria."
+                    },
+                    "fnPreDrawCallback": function( oSettings ) {
+                        rowIdx = -1;
+                    },
+                    "aoColumns": [ 
+                        {
+                            sWidth: '10%',
+                            sClass: "documentsTableCenterCell",
+                            sTitle: "Control ",
+                            bSortable: false,
+                            "mDataProp": "id",
+                            fnRender: function(oObj) {
+                                var form = '<br/><button name="update" ';
+                                form += 'class="update_button" ';
+                                form += 'id="update_button" ';
+                                form += 'onclick="updateDocument($($(this).parent()).parent()[0])"  value="' + oObj.oSettings.aoData[++rowIdx]._aData.id + '">Update</button>';
+                                form += '<br/>';
+                                
+                                form += '<button name="delete" ';
+                                form += 'class="delete_button" ';
+                                form += 'id="delete_button" ';
+                                form += 'onclick="deleteDocument($($(this).parent()).parent()[0])"  value="' + oObj.oSettings.aoData[rowIdx]._aData.id + '">Delete </button>';
+                                form += '<br/>';
+                                
+                                return form;
+                            }
+                        },
+                        { 
+                            sWidth: '10%',
+                            sClass: "documentsTableCenterCell",
+                            sTitle: "Validated ",
+                            "mDataProp": "validated",
+                            fnRender: function(oObj) {
+                                if (oObj.aData.validated == false) {
+                                    return defineCheckboxElement("validated_", rowIdx, false);
+                                } else {
+                                    return defineCheckboxElement("validated_", rowIdx, true);
+                                }
+                            } 
+                        }, 
+                        { 
+                            sWidth: '10%',
+                            sClass: "documentsTableCenterCell",
+                            sTitle: "Use In Model ",
+                            "mDataProp": "useInModel",
+                            fnRender: function(oObj) {
+                                if (oObj.aData.useInModel == false) {
+                                    return defineCheckboxElement("useInModel_", rowIdx, false);
+                                } else {
+                                    return defineCheckboxElement("useInModel_", rowIdx, true);
+                                }
+                            } 
+                        },
+                        { 
+                            sWidth: '10%',
+                            sClass: "documentsTableCenterCell",
+                            sTitle: "Classification ", 
+                            "mDataProp": "classification",
+                            fnRender: function(oObj) {
+                                var selectDropdown = '<select name="classification">';
+                                for (var i in classifications) {
+                                    if (oObj.aData.classification == classifications[i]) {
+                                        selectDropdown += '<option selected value="' + classifications[i] + '">' + classifications[i] + '</option>';
+                                    } else {
+                                        selectDropdown += '<option value="' + classifications[i] + '">' + classifications[i] + '</option>';
+                                    }
+                                }
+                                selectDropdown += '</select>' ;
+                                return selectDropdown;
+                            }
+                        }, 
+                        { 
+                            sWidth: '50%',
+                            sClass: "documentsTableTextColumnHeader",
+                            sTitle: "Text", 
+                            "mDataProp": "text"
+                        },
+                        {
+                            sWidth: '10%',
+                            sClass: "documentsTableCenterCell",
+                            sTitle: "Score",
+                            mDataProp: "score"
+                        }
+                    ],
+                    "aoData": [
+                        null,
+                        null,
+                        null,
+                        null
+                    ]
+                }).makeEditable({
+                    "aoColumns": [ 
+                        null, //null for read-only columns
+                        null,              
+                        null,
+                        null,
+                        
+                        { 
+                            tooltip: 'Double click to edit',
+                            sUpdateURL: function(value, settings){ 
+                                
+                                // line 152 in jquery.dataTables.editable.js was modified to not redraw table
+                                // so paging doesn't jump to First page'
+                                var aPos = oTable.fnGetPosition(this);
+                                oTable.fnUpdate(value, aPos[0], aPos[2], false, false);
+                                
+                                return (value);
+                            }
+                        },
+                        null
+                    ]
+                });
+                
+                $('#documents_table').css('width', '100%');
+                
+                oTable.columnFilter({
+                        "sPlaceHolder" : "head:after",
+                        "aoColumns": [ 
+                            null,
+                            { "type": "select", "values": [ 'true', 'false'] },
+                            { "type": "select", "values": [ 'true', 'false'] },
+                            { "type": "select", "values": classifications },
+                            { "type" : "text"},
+                            null
+                        ]
+                });
+                
+            }
+            
+        </script>
+    </head>
+    <body>
+        <div id="wrapper">
+            <div id="wrapper2">
+                <div id="header">
+                    <div id="logo">
+                        <h1><a href="/">Nebarti</a></h1>
+                    </div>
+                    <div id="menu">
+                        <nav role="navigation">
+                        <ul id="nav">
+                            <li tabindex="0"><a href="#">Tools</a>
+                                <ul class="submenu" tabindex="0">
+                                    <li tabindex="0"><a href="./models.html">Models</a></li>
+                                    <li tabindex="0"><a href="#">Supervised Learning</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        </nav>
+                    </div>
+                </div>
+                <!-- end #header -->
+
+                <div id="page">
+                    <!-- visibility controlled programatically -->
+                    <div id="addForm_div" title="Add New Document">                         
+                        <form id="formAddDocument" action="#">
+                            <input type="checkbox" name="addFormValidated" id="addFormValidated" tabindex=1 /> 
+                            <label for="addFormValidated">Validated </label>
+                            <br />
+                            <input type="checkbox" name="addFormUseInModel" id="addFormUseInModel" tabindex=2 />
+                            <label for="addFormUseInModel">Use In Model</label>                           
+                            <br /><br />
+                            <label for="addFormClassification">Classification</label> 
+                            <select name="addFormClassification" id="addFormClassification" tabindex=3>
+                                <!-- option elements dynamically populatd based on models being used -->
+                            </select> 
+                            <br /><br />
+                            <label for="text">Text</label><br />
+                            <textarea name="formText" id="formText" rows="5" cols="35" tabindex=4></textarea>
+                        </form>
+                    </div>   
+                                            
+                    <div id="supervised_learning">                       
+                        <div class="modelContent">
+                            <h2 class="title">Supervised Learning</h2>
+                            <select id="modelSelector">
+                                <option value="selectModel" selected="selected">Select Model...</option>
+                            </select>
+                            <br/><br/>
+                        
+                            <div id="documents_div"></div>
+                            
+                        </div>    
+                                                            
+                    </div>
+
+                </div>
+                <!-- end #page -->
+            </div>
+            <!-- end #wrapper2 -->
+            <div id="footer">
+                <span class="copyright">Copyright © 201 Nebarti. All Rights Reserved</span>
+                <span class="links">
+                    -
+                    <a href="../home/about.html">About</a>
+                    - 
+                    <a href="mailto:support@nebarti.com?Subject=Website%20request">Contact</a>
+                </span>
+            </div>
+        </div>
+        <!-- end #wrapper -->                    
+    </body>
+</html>

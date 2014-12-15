@@ -1,0 +1,53 @@
+  <!-- Contact Modal -->
+  <script src="assets/js/email.js"></script>
+  <div class="modal fade" id="contact" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title" id="myModalLabel">Send Us a Message</h4>
+        </div>
+        <div class="modal-body">
+          <form id="formFeedback" class="form-horizontal" action="#">
+            <div class="form-group">
+              <label class="control-label col-md-4" for="first_name">Name</label>
+              <div class="col-md-6">
+                <input type="text" class="form-control" id="name" name="name" placeholder="Full Name"/>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="control-label col-md-4" for="email">Email Address</label>
+              <div class="col-md-6 input-group">
+                <span class="input-group-addon">@</span>
+                <input type="email" class="form-control" id="email" name="email" placeholder="Email Address"/>
+              </div>
+            </div>
+    
+            <div class="form-group">
+              <label class="control-label col-md-4" for="email">Feedback Type</label>
+              <div class="col-md-6">
+                  <select class="form-control" id="feedbacktype" name="feedbacktype">  
+                    <option value="general">General</option>  
+                    <option value="sales">Suggestions</option>  
+                    <option value="support">Request</option>  
+                  </select>
+              </div>
+            </div>
+          
+            <div class="form-group">
+              <label class="control-label col-md-4" for="email">Message</label>
+              <div class="col-md-6">
+                <textarea class="form-control" id="message" name="message" placeholder="Enter your message here." required="required" data-minlength="20" style="height: 120px"></textarea> 
+              </div>
+            </div>
+            
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal" id="cancelBtn">Cancel</button>
+          <button type="button" class="btn btn-primary" id="sendBtn">Send</button>
+        </div> 
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+ </div><!-- /.modal -->

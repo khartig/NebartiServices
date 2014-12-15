@@ -1,0 +1,1006 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- 
+   Nebarti
+   Copyright © 2013. All rights reserved.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<!--        <meta http-equiv="refresh" content="180"/>-->
+        <title>Nebarti</title>
+        <link rel="shortcut icon" href="../images/favicon.ico"/>
+        <meta name="keywords" content="social media, data analytics, sentiment, real time, self-service analytics,
+                                       data discovery, advanced visualization, visual analytics, visual analytics,
+                                       self-serve business intelligence, BI 3.0, Nebarti, SAAS, Sentiment as a Service" />
+        <meta name="keywords" content="Barack Obama, Fiscal Cliff, Lady Gaga" />
+        <meta name="description" content="Live data feed analytics services. Nebarti provides simple to use tools for
+              extracting meaning from text published on the web. Nebarti web service tools provide sentiment analysis and
+              summarize most commonly referenced discussion points, images and web sites. Data filtering for demographics
+              and text classification is also provided." />
+        <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" />
+        <link rel="stylesheet" href="../css/navigation-menu.css" type="text/css" />
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/themes/base/jquery-ui.css" type="text/css"/>
+        
+        <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+        <script type="text/javascript">google.load('visualization', '1.1', {packages: ['corechart', 'controls', 'table']});</script>
+        <script type="text/javascript" src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+        
+        <script type="text/javascript" src="../js/date.js"></script>
+        <script type="text/javascript" src="../js/cloud-carousel.1.0.5.min.js"></script>
+        
+        <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBVqfhfnP2_qo7zgNXMbK6WOcZV2JOr6cE&libraries=visualization&sensor=false"></script>
+        
+        <script type="text/javascript">
+            // google analytics
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-34681660-1']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+            // google analytics
+            
+            
+            $(document).ready(function() {
+                
+                // classification switch logic
+                $(".cb-enable").click(function(){
+		    var parent = $(this).parents('.switch');
+		    $('.cb-disable',parent).removeClass('selected');
+		    $(this).addClass('selected');
+		    $('.checkbox',parent).attr('checked', true);
+                    classificationSwitches[this.id] = true;
+                    drawLineChart();
+                    updateDataView();
+	        });
+	        $(".cb-disable").click(function(){
+		    var parent = $(this).parents('.switch');
+		    $('.cb-enable',parent).removeClass('selected');
+		    $(this).addClass('selected');
+		    $('.checkbox',parent).attr('checked', false);
+                    classificationSwitches[this.id] = false;
+                    drawLineChart();
+                    updateDataView();
+	        });
+                
+                
+                $('#signin_div').hide(); // hides the popup dialog html login form
+                $("#btnFeedback").click(
+                    function() {
+                        $("#feedback_div").dialog("open");
+                    });
+                    
+                $('#signup_div').hide(); // hides the popup dialog html signup form
+                $("#btnCreateAccount").click(
+                    function() {
+                        $("#signin_div").dialog("close");
+                        $('#formSignin')[0].reset();
+                        $("#signup_div").dialog("open");
+                    });
+                         
+                
+                // feedback form div definitions
+                $('#feedback_div').hide(); // hides the popup dialog html feedback form
+                
+                $('#feedback_div').dialog ({
+                    autoOpen: false,
+                    modal: true,
+                    height: 650,
+                    width: 700,
+                    show: "puff",
+                    buttons: {
+                       "Cancel": function() {
+                           $('#feedback_div').dialog("close");
+                           $('#formFeedback')[0].reset();
+                       },
+                       "Clear": function() {
+                           $('#formFeedback')[0].reset();
+                       },
+                       "Send": function() {
+                           var formdata = JSON.stringify({
+                            "name": $('#name').val(),
+                            "emailAddress": $('#email').val(),
+                            "phone": $('#telephone').val(),
+                            "feedbackType": $('#feedbacktype').val().toString(),
+                            "message": $('#message').val()
+                           });
+                           $.ajax({
+                               type: 'PUT',
+                               contentType: 'application/json',
+                               url: "/services/email/",
+                               dataType: 'json',
+                               data: formdata,
+                               processData: false,
+                               success: function(data, textStatus, jqXHR){
+                                   alert('Message sent successfully');
+                               },
+                               error: function(jqXHR, textStatus, errorThrown){
+                                   alert('Message send error: ' + textStatus);
+                               }
+                           });
+                           $('#feedback_div').dialog("close");
+                       }
+                    },
+                    close: function() {
+                        $('#formFeedback')[0].reset();	
+                    }
+                });
+                   
+                $("#politics_ul_div").hide();   
+                $('#data_views_ul_div').hide();
+                $('#modelVisibleName').append("<h2>" + getVisibleName() + "</h2>")
+                
+                $('#politics_li').mouseleave(
+                    function() {
+                        $("#politics_ul_div").slideUp();
+                        politics_items_visible = false;
+                    }
+                );
+
+                modelName = getModelName();
+                drawCharts();
+                
+                function drawCharts() { 
+                    $('#classification_summary_div').hide();
+                    $('#phrase_entites_div').hide();
+                    $('#webpages_div').hide();
+                    $('#images_div').hide();
+                    
+                    $.ajax({
+                        async: false,
+                        type: "GET",
+                        url: "/services/models/classifications/" + modelName + "/",
+                        success: function(obj) {                           
+                            classifications = obj.classifications;    
+                            
+                            // this is weher classifications switches should be defined
+                            classificationSwitches = [];
+                            for (i=0; i < classifications.length; i++)  {
+                                classificationSwitches[classifications[i]] = true;
+                            }
+                        }
+                    });
+                    
+                    $.ajax({
+                        async: false,
+                        type: "GET",
+                        url: "/services/models/documents/" + modelName + "/?iDisplayLength=6000",
+                        success: function(obj) {
+                            documents = obj.aaData;
+                            
+                            drawLineChart();
+                            drawPieChart();
+//                            drawEntitiesChart();
+//                            drawWebPageThumbnails();
+//                            drawPopularImages();
+                        }
+                    });
+                 
+                } // end of drawChart
+                
+                function drawLineChart() {
+                    var elem = document.getElementById('linechart-div');
+                    var chart = new google.visualization.LineChart(document.getElementById('linechart-div'));
+                    
+                    var data = new google.visualization.DataTable();  
+                    data.addColumn('datetime', 'Date');
+                    for (var i in classifications) {
+                        data.addColumn('number', classifications[i]);   
+                    }
+                   
+                    var rowMap = {};
+                    var columnsMap = {};
+                   
+                    for (var n in documents) {
+                        // could define a parameter to set date to group values by day, month, hour, etc. for plot
+                        // var reviewDate = Date.parse(documents[n].date); 
+                        // if (reviewDate === null) continue;
+                        // reviewDate.set({ millisecond: 0, second: 0, minute: 0, hour: 0 });
+                                
+                        var reviewDateStr = documents[n].date.substr(4,6).concat(", ");
+                        reviewDateStr = reviewDateStr.concat(documents[n].date.substr(24,4)).concat(" ");
+                        reviewDateStr = reviewDateStr.concat(documents[n].date.substr(11,5));
+                        var reviewDate = new Date(reviewDateStr);
+                        
+                        // check if date already has values
+                        if (rowMap[reviewDate] == null) {
+                            var columns = new Array(3);
+                            for (i=0; i < classifications.length; i++) {
+                                if (classificationSwitches[classifications[i]]) {
+                                    if (classifications[i] === documents[n].classification) {
+                                        columns[i] = 1; 
+                                    } else {
+                                        columns[i] = 0;
+                                    }
+                                }
+                            }                        
+    
+                            var row;
+                            if (columns.length === 3) {
+                                row = data.addRow([reviewDate, columns[0], columns[1], columns[2]]); 
+                            } 
+                            
+                            rowMap[reviewDate] = row;
+                            columnsMap[reviewDate] = columns;
+                            
+                        } else {
+                            var row = rowMap[reviewDate];
+                            var columns = columnsMap[reviewDate]; 
+                            for (i=0; i < classifications.length; i++) {
+                                if (classificationSwitches[classifications[i]]) {
+                                    if (classifications[i] === documents[n].classification) {
+                                        ++columns[i]; 
+                                        data.setValue(row, i+1, columns[i]);
+                                    } 
+                                }
+                            } 
+                        }
+                    }
+                   
+                    data.sort([{column: 0}])
+                    var now = new Date();
+                    var utc = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+                    var datestr = utc.toString("d-MMM-yyyy") + " GMT";
+                    var chartOptions = {
+                                title: 'Trending Sentiment Time Range',
+                                hAxis: {title: datestr, slantedText: false},
+                                vAxis: {title: '# tweets'},
+                                colors: ['blue', 'orange', 'red'],
+                                width: 840,
+                                height: 270
+//                                'chartArea': {top: 10, left: 50, width: '75%', height: '70%'}
+                    };
+                    chart.draw(data, chartOptions); 
+                } // end of drawLineChart  
+                         
+            }); // end of $(document).ready(function()
+            
+            function isValidLocation(lat, lon) {
+                if (lat === '0.0' && lon === '0.0') return false;
+                if (lat === 0 && lon === 0) return false;
+                
+                var latValid = !isNaN(parseFloat(lat)) && isFinite(lat);
+                var lonValid = !isNaN(parseFloat(lon)) && isFinite(lon);
+                
+                if (!latValid || !lonValid) return false;
+                
+                return true;
+            }
+                            
+            function drawDemographics() {
+                toggleMenu('data_views');
+                toggleDiv('#demographics_div');
+                
+                var locations = [];
+                for (var n in documents) {
+                    for (var j in classifications) {
+                        if (classificationSwitches[classifications[j]]) {
+                            if ( classifications[j] == documents[n].classification ) {
+                                if (isValidLocation(documents[n].latitude, documents[n].longitude) ) {
+                                    locations.push(new google.maps.LatLng(parseFloat(documents[n].latitude), parseFloat(documents[n].longitude)))
+                                }
+                            }
+                        }
+                    }
+                }               
+
+                var mapOptions = {
+                        zoom: 2,
+                        center: new google.maps.LatLng(38.8338889, -104.8208333),
+                        mapTypeId: google.maps.MapTypeId.ROADMAP,
+                        disableDefaultUI: false,
+                        scrollwheel: true,
+                        draggable: true,
+                        navigationControl: true,
+                        mapTypeControl: false,
+                        scaleControl: true,
+                        disableDoubleClickZoom: false
+	        };
+                
+                map = new google.maps.Map(document.getElementById("heatmap_div"), mapOptions);
+
+                var heatmap = new google.maps.visualization.HeatmapLayer({
+                    data: locations
+                });
+                heatmap.setMap(map);  
+           }
+           
+           function load_websnapr_js(callback) {
+               var script = document.createElement('script');
+               script.type = 'text/javascript';
+               script.src = "http://www.websnapr.com/js/websnapr.js?ts=" + new Date().getTime();
+               
+               var previousScript = document.getElementById('websnprJS');
+
+               if (!!(previousScript)) {
+                   document.getElementsByTagName("head")[0].replaceChild(script, previousScript);
+               } else {
+                   document.getElementsByTagName("head")[0].appendChild(script);
+               }
+               
+               script.onload = function() {
+                   callback();
+               };
+           }
+            
+            function drawWebPageThumbnails() {
+                toggleMenu('data_views');
+                toggleDiv('#webpages_div');
+                
+                      $.ajax({
+                          async: false,
+                          type: "GET",
+                          url: "/services/models/references/" + modelName + "?limit=10",
+                          success: function(references) {
+                              
+                              $('#thumbnail_title_div_0').empty();
+                              $('#thumbnail_title_div_1').empty();
+                              $('#thumbnail_title_div_2').empty();
+                              $('#thumbnail_title_div_3').empty();
+                              $('#thumbnail_title_div_4').empty();
+                              $('#thumbnail_title_div_5').empty();
+                              $('#thumbnail_title_div_6').empty();
+                              $('#thumbnail_title_div_7').empty();
+                              $('#thumbnail_title_div_8').empty();
+                              $('#thumbnail_title_div_9').empty();
+                              $('#thumbnail_div_0').empty();
+                              $('#thumbnail_div_1').empty();
+                              $('#thumbnail_div_2').empty();
+                              $('#thumbnail_div_3').empty();
+                              $('#thumbnail_div_4').empty();
+                              $('#thumbnail_div_5').empty();
+                              $('#thumbnail_div_6').empty();
+                              $('#thumbnail_div_7').empty();
+                              $('#thumbnail_div_8').empty();
+                              $('#thumbnail_div_9').empty();
+                              
+                              // filter out classifications not selected
+                              var filteredReferences = new Array();
+                              for (var i in references) {
+                                  for (var j in classifications) {
+                                      if (classificationSwitches[classifications[j]]) {
+                                          if (! (-1 == $.inArray(classifications[j], references[i].classifications)) ) {
+                                              var contains = false;
+                                              for (var k in filteredReferences) {
+                                                  if (filteredReferences[k].id === references[i].id) {
+                                                      contains = true;
+                                                      break;
+                                                  }
+                                              }
+                                              
+                                              if (contains === false) {
+                                                  filteredReferences.push(references[i]);
+                                              }
+                                          }
+                                      }
+                                  }
+                              }
+                              
+                              if (filteredReferences != null) {
+                                  load_websnapr_js(function() {
+                                      for (var i in filteredReferences) {
+                                        var thumbnail_title_div = "#thumbnail_title_div_" + i;
+                                        var thumbnail_div = "#thumbnail_div_" + i;
+                                        var thumbnail = $('<img />', {
+			                  src: 'http://images.websnapr.com/?size=s&url=' + filteredReferences[i].urlString + '&key=' + encodeURIComponent("A0H8G2714Gwl") + '&hash=' + encodeURIComponent(websnapr_hash),
+                                          alt: 'Loading thumbnail...',
+                                          width: 200,
+                                          height: 150,
+                                          id: "thumbnail_img_" + i
+                                        });
+                                        $(thumbnail_title_div).append(filteredReferences[i].title);
+                                        $(thumbnail_div).append(
+                                            '<a href="' + filteredReferences[i].urlString + 
+                                             '" onmousedown="javascript:this.href=\'http://r.websnapr.com/?r=' + 
+                                             encodeURIComponent(filteredReferences[i].urlString) +
+                                             '\'" target="_blank" rel="nofollow">' + thumbnail[0].outerHTML + '</a>');
+                                      }
+                                  });
+                              }                 
+                          }
+                      });  
+                  
+                  } // end of drawWebPageThumbnails 
+                 
+                function drawPieChart() {
+                    toggleMenu('data_views');
+                    toggleDiv('#classification_summary_div');
+                    
+                    $('#sentiment_piechart_div').empty();
+                    $('#sentiment_numbers_div').empty();
+                    
+                    var rowMap = {};
+                    var data = new google.visualization.DataTable(); 
+                    data.addColumn('string', 'Classification'); 
+                    data.addColumn('number', 'Count');
+                    for (var i in classifications) {
+                        data.addRow([classifications[i], 0]);   
+                        rowMap[classifications[i]] = parseInt(i);
+                    }
+                    
+                    for (var n in documents) {
+                        data.setValue(rowMap[documents[n].classification], 1, data.getValue(rowMap[documents[n].classification], 1) + 1);
+                    }
+                    
+                    var options = {
+                        title: 'Classification %',
+                        is3D: true,
+                        'width':350,
+                        'height':350,
+                        colors: ['blue', 'orange', 'red']
+                    };
+
+                    var chart = new google.visualization.PieChart(document.getElementById('sentiment_piechart_div'));
+                    chart.draw(data, options);
+                    
+                    for (var n in classifications) {
+                       $('#sentiment_numbers_div').append('<h3>'+ classifications[n] + ": " + ((data.getValue(rowMap[classifications[n]], 1)*100)/documents.length).toFixed(2) + "% " + data.getValue(rowMap[classifications[n]], 1) + ' tweets</h3>');                         
+                    }
+                    $('#sentiment_numbers_div').append('<h3>Total Number of Tweets: ' + documents.length + '</h3>');
+
+                } // end of drawPieChart
+                
+                  function drawPopularImages() {
+                      toggleMenu('data_views');
+                      toggleDiv('#images_div');
+                      $('#carousel1').empty();
+                      
+                      $.ajax({
+                          async: false,
+                          type: "GET",
+                          url: "/services/models/images/" + modelName + "?limit=20",
+                          success: function(images) {
+                              for (var i in images) {
+                                  for (var j in classifications) {
+                                      if (classificationSwitches[classifications[j]]) {
+                                          if ($.inArray(classifications[j], images[i].classifications) ) {
+                                               $('#carousel1').append('<img class = "cloudcarousel" src="' + images[i].urlString + '" alt="image not found">');
+                                               break;
+                                          }
+                                      }
+                                  } 
+                              }
+                              
+                              // This initialises carousels on the container elements specified, in this case, carousel1.
+                              // it needs to be called after img tags are in the div to process
+	                      $("#carousel1").CloudCarousel({			
+                                  xPos: 410,
+                                  yPos: 50,
+                                  minScale: 0.25,
+                                  buttonLeft: $("#left_carousel_buttton"),
+                                  buttonRight: $("#right_carousel_buttton"),
+                                  bringToFront: true
+                              });
+                          }
+                      });
+                  }
+
+            function drawEntitiesChart() {
+                toggleMenu('data_views');
+                toggleDiv('#phrase_entites_div');
+                      
+                $('#common_words_div').empty();
+                $('#coref2_div').empty();
+                $('#coref3_div').empty();
+                $('#famousPeople_div').empty();
+                
+                // top word count
+                $.ajax({
+                    async: false,
+                    type: "GET",
+                    url: "/services/models/wordcount/" + modelName + "?limit=10&usePrecalculated=true",
+                    success: function(wordcounts) {
+                        for (var i=0; i<10; i++) {
+                            for (var j in classifications) {
+                                if (classificationSwitches[classifications[j]]) {
+                                    if ($.inArray(classifications[j], wordcounts[i].classifications) ) {
+                                        $('#common_words_div').append(wordcounts[i].word + "<br/>");
+                                        break; // only need to check if one classification matches
+                                     }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // 2 word phrases
+                $.get("/services/models/coreferences/" + modelName + "?limit=10&count=2&usePrecalculated=true", { } ,
+                    function(references) {
+                        if (references != null) {
+                            var maxItems = 10;
+                            if (references.length < maxItems) {
+                                maxItems = references.length;
+                            }
+                            for (var i=0; i<maxItems; i++) {
+                                for (var j in classifications) {
+                                    if (classificationSwitches[classifications[j]]) {
+                                        if ($.inArray(classifications[j], references[i].classifications) ) {
+                                            var text = references[i].text.wrap(50, '</br>');
+                                            $('#coref2_div').append('<pre class="tooltip"><span>' + text + '</span>' + references[i].words + "</pre>");  
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }                 
+                    },
+                    "json");
+                    
+                // 3 word phrases
+                $.get("/services/models/coreferences/" + modelName + "?limit=10&count=3&usePrecalculated=true", { } ,
+                    function(references) {
+                        if (references != null) {
+                            var maxItems = 10;
+                            if (references.length < maxItems) {
+                                maxItems = references.length;
+                            }
+                            
+                            for (var i=0; i<maxItems; i++) {
+                                for (var j in classifications) {
+                                    if (classificationSwitches[classifications[j]]) {
+                                        if ($.inArray(classifications[j], references[i].classifications) ) {
+                                            var text = references[i].text.wrap(50, '</br>');
+                                            $('#coref3_div').append('<pre class="tooltip"><span>' + text + '</span>' + references[i].words + "</pre>");
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }                
+                    },
+                    "json");    
+                  
+                // famous people  
+                $.get("/services/models/entities/" + modelName + "?limit=10&type=FAMOUS_PEOPLE&usePrecalculated=true", { } ,
+                    function(entities) {
+                        var maxcount = 0;
+                        if (entities != null) {                   
+                            if (entities.length !== undefined) {
+                                for (var i in entities) {
+                                    for (var j in classifications) {
+                                        if (classificationSwitches[classifications[j]]) {
+                                            if ($.inArray(classifications[j], entities[i].classifications) ) {
+                                                if(entities[i].type === "FAMOUS_PEOPLE") {
+                                                    $('#famousPeople_div').append('<a href="http://en.wikipedia.org/wiki/' + entities[i].phrase + '" target="_blank">' + entities[i].phrase + '</a><br/>');
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                                
+                                    maxcount++;
+                                    if(maxcount > 9) break;
+                                    
+                                }
+                            }
+                        }
+                                      
+                    },
+                    "json");    
+                                                
+            }
+            
+            function updateDataView() {
+                if (currently_selected_data_view === '#classification_summary_div') {
+                    // nothing for now
+                } else if (currently_selected_data_view === '#phrase_entites_div') {
+                    drawEntitiesChart();
+                } else if (currently_selected_data_view === '#webpages_div') {
+                    drawWebPageThumbnails();
+                } else if (currently_selected_data_view === '#images_div') {
+                    drawPopularImages();   
+                } else if (currently_selected_data_view === '#demographics_div') {
+                    drawDemographics();
+                }
+            }
+                          
+            function toggleDiv(divName) {
+                $('#classification_summary_div').hide();
+                $('#phrase_entites_div').hide();
+                $('#webpages_div').hide();
+                $('#images_div').hide();
+                $('#demographics_div').hide();
+                 
+                $(divName).show();
+                currently_selected_data_view = divName;
+            }
+            
+            // topic menu links
+            politics_items_visible = false; 
+            data_views_items_visible = true; // this gets called on page load and the draw function is called
+                        
+            function toggleMenu(menuGroup) {
+                if (menuGroup === 'politics') {
+                    if (politics_items_visible === false) {
+                        $("#politics_ul_div").slideDown();
+                        politics_items_visible = true;
+                    } else {
+                        $("#politics_ul_div").slideUp();
+                        politics_items_visible = false;
+                    }
+                } else if (menuGroup === 'data_views') {
+                    if (data_views_items_visible === false) {
+                        $("#data_views_ul_div").slideDown();
+                        data_views_items_visible = true;
+                    } else {
+                        $("#data_views_ul_div").slideUp();
+                        data_views_items_visible = false;
+                    }
+                }
+                
+                return false;
+            }
+            
+            function getModelName() {
+//               var parameters = location.search.substring(1).split("&");
+//
+//               var temp = parameters[0].split("=");
+//               var modelName = unescape(temp[1]);
+               return "barack_obama";
+            }
+            
+            function getVisibleName() {
+//               var parameters = location.search.substring(1).split("&");
+//
+//               var temp = parameters[1].split("=");
+//               var visibleName = unescape(temp[1]);
+               return "Barack Obama";
+            }
+            
+            String.prototype.wrap = function(width, brk, cut) {
+                brk = brk || '</br>';
+                width = width || 50;
+                cut = cut || false;
+                
+                var regex = '.{1,' +width+ '}(\\s|$)' + (cut ? '|.{' +width+ '}|.+$' : '|\\S+?(\\s|$)');
+                return this.match( RegExp(regex, 'g') ).join( brk );
+            }
+            
+        </script>
+    </head>
+    <body>
+        <div id="wrapper">
+            <div id="wrapper2">             
+                <div id="header"> 
+                    <div id="logo">
+                        <h1><a href="/">Nebarti</a></h1>
+                        <div id="tagline">
+                            <b>Analytics for Everyone</b>
+                        </div>
+                    </div>
+                    <div id="login">
+                        <button id="btnFeedback" class="stylized_button" style="width: 100px">Send Feedback</button>
+                    </div>
+                </div>
+                <!-- end #header -->
+                <div id="page">
+                    <!-- visibility controlled programatically -->                  
+                    <div id="feedback_div" title="Send Feedback">
+                        <p>This site was launched a few days ago. Information shown here is extracted from Twitter 
+                        feeds. Future features include:
+                        <ul>
+                            <li>Following many more topics.</li>
+                            <li>Ability to define your own topics.</li>
+                            <li>Filtering viewed data by time period, demographics.</li>
+                            <li>More comprehensive easy to use data analytics.</li>
+                        </ul>
+                        All comments and suggestions are welcome.
+                        </p>
+                        <form id="formFeedback" action="#">
+                            <label for="name"><span class="required">*</span> Name:</label><br/>
+                            <input type="text" id="name" name="name" value="" placeholder="Joe Smith" required="required" autofocus="autofocus" style="width: 200px" /><br/><br/>
+          
+                            <label for="email"> <span class="required">*</span></label> Email Address:<br />
+                            <input type="email" id="email" name="email" value="" placeholder="joesmith@example.com" required="required" style="width: 200px"/><br/><br/>
+          
+                            <label for="telephone">Telephone: </label><br/>
+                            <input type="tel" id="telephone" name="telephone" value="" style="width: 120px" /><br/><br/>
+          
+                            <label for="enquiry">Feedback Type: </label><br/>
+                            <select id="feedbacktype" name="feedbacktype">  
+                                <option value="general">General</option>  
+                                <option value="sales">Suggestions</option>  
+                                <option value="support">Request</option>  
+                            </select> <br/><br/>
+          
+                            <label for="message"> <span class="required">*</span> Message:</label><br/>
+                            <textarea id="message" name="message" placeholder="Your message must be greater than 20 characters" required="required" data-minlength="20" style="width: 600px; height: 120px"></textarea><br/>  
+ 
+                            <p id="req-field-desc"><span class="required">*</span> indicates a required field</p> 
+                        </form>
+                    </div>
+                         
+                    <h1 style="padding-top: 20px; padding-bottom: 20px; padding-left: 80px;">Analyze Topic Trends</h1>
+                    <div id="topicsMenu">
+                            <h3>Featured Topics</h3>
+                            <ul>
+                                <li id="politics_li" title="politics">
+                                    <a nohref onclick="javascript:toggleMenu('politics')" >
+                                        <span class="stylized_model_button" style="width: 100px"/>
+                                        Politics
+                                    </a>
+                                    <div id="politics_ul_div">
+                                        <ul>
+                                            <li>
+                                                <a href="home/modelTemplate.html?modelName=barack_obama&visibleName=Barack Obama">Barack Obama</a>
+                                            </li>  
+                                            <li>
+                                                <a href="home/modelTemplate.html?modelName=fiscal_cliff&visibleName=Fiscal Cliff">Fiscal Cliff</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                
+<!--                                <li id="entertainment_li" title="entertainment">
+                                    <a nohref onclick="javascript:toggleMenu('entertainment')" >
+                                        <span class="stylized_model_button" style="width: 100px"/>
+                                        Entertainment
+                                    </a>
+                                    <div id="entertainment_ul_div">
+                                    </div>
+                                </li>
+                                <li>
+                                    <a nohref onclick="javascript:toggleMenu('technology')" >
+                                        <span class="stylized_model_button" style="width: 100px"/>
+                                        Technology
+                                    </a>
+                                </li>
+                                <li>
+                                    <a nohref onclick="javascript:toggleMenu('technology')" >
+                                        <span class="stylized_model_button" style="width: 100px">
+                                        Sports
+                                    </a>
+                                </li>-->
+                                
+                            </ul>
+                    </div>                              
+                        
+                    <div id="content_wrapper" style="position: absolute; z-index: -10;">
+                    <div id="content">
+                        <div class="post">
+                            <div class="title" id="modelVisibleName"></div>                           
+                            <br/>
+                            <div class="entry">
+                                <h3>Select Data Filters</h3>
+                                
+                                <div id="linechart-div">
+                                </div>
+                                
+                                <div id="switches" style="padding-top: 10px; padding-left: 100px">   
+                                <table class='main_page_table'>
+                                    <tr colspan="3">
+                                        <td>
+                                            <h4>Classification Switches</h4>
+                                        </td>
+                                    </tr>
+                                    <tr class="on_off">
+                                        <td style="padding-left: 50px; padding-right: 50px;">
+                                            <p class="field switch">
+		                                <label class="cb-enable selected" id="positive"><span>On</span></label>
+		                                <label class="cb-disable" id="positive"><span>Off</span></label>
+	                                    </p>
+                                            <h3 style="color: blue">Positive</h3>
+                                        </td>
+                                        <td style="padding-left: 50px; padding-right: 50px;">
+                                            <p class="field switch">
+		                                <label class="cb-enable selected" id="neutral"><span>On</span></label>
+		                                <label class="cb-disable" id="neutral"><span>Off</span></label>
+	                                    </p>
+                                            <h3 style="color: orange">Neutral</h3>
+                                        </td>
+                                        <td style="padding-left: 50px; padding-right: 50px;">
+                                            <p class="field switch">
+		                                <label class="cb-enable selected" id="negative"><span>On</span></label>
+		                                <label class="cb-disable" id="negative"><span>Off</span></label>
+	                                    </p>
+                                            <h3 style="color: red">Negative</h3>
+                                        </td>
+                                    </tr>
+                                </table>
+                                </div>
+                                    
+                                <div id="dataViewsMenu">
+                                    <h3>Choose Data View</h3>
+                                    <ul>
+                                        <li id="clssification_summary_li" title="clssification_summary">
+                                            <a nohref onclick="javascript:drawPieChart()" >
+                                                <span class="stylized_model_button" style="width: 110px; height: 35px;"/>
+                                                Classification Summary
+                                            </a>
+                                        </li>
+                                        <li id="phrases_entities_li" title="phrase_entities">
+                                            <a nohref onclick="javascript:drawEntitiesChart()" >
+                                                <span class="stylized_model_button" style="width: 110px; height: 35px;"/>
+                                                Phrases & Entities
+                                            </a>
+                                        </li>
+                                        <li id="most_referenced_websites_li" title="most_referenced_websites">
+                                            <a nohref onclick="javascript:drawWebPageThumbnails()" >
+                                                <span class="stylized_model_button" style="width: 110px; height: 35px;"/>
+                                                Referenced Websites
+                                            </a>
+                                        </li>
+                                        <li id="popular_images_li" title="popular_images">
+                                            <a nohref onclick="javascript:drawPopularImages()">
+                                                <span class="stylized_model_button" style="width: 110px; height: 35px;"/>
+                                                Popular Images
+                                            </a>
+                                        </li>
+                                        <li id="demographics_li" title="demographics">
+                                            <a nohref onclick="javascript:drawDemographics()">
+                                                <span class="stylized_model_button" style="width: 110px; height: 35px;"/>
+                                                Demographics
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                
+                                <div id="data_views_div" style="clear: both;">
+                                    <div id="classification_summary_div">
+                                        <table class="model_template_table">
+                                            <tr>
+                                                <th><h3>Classification Summary</h3></th>
+                                                <th></th>
+                                            </tr>
+                                            <tr>
+                                                <td><div id="sentiment_piechart_div"></div></td>
+                                                <td><div id="sentiment_numbers_div"></div></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    
+                                    <div id="phrase_entites_div">
+                                        <table class="model_template_table">
+                                            <tr>
+                                                <th colspan="3"><h3>Frequently Referenced Phrases & Entities</h3></th>
+                                                <th></th>
+                                                <th></th>
+                                                <th></th>
+                                            </tr>
+                                            <tr>
+                                                <th>Words</th>
+                                                <th>2 Word Phrases</th>
+                                                <th>3 Word Phrases</th>
+                                                <th>Famous People</th>
+                                            </tr>
+                                            <tr valign=top>
+                                                <td> <div id="common_words_div"></div> </td>
+                                                <td> <div id="coref2_div"></div> </td>
+                                                <td> <div id="coref3_div"></div> </td>
+                                                <td> <div id="famousPeople_div"></div> </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    
+                                    <div id="webpages_div" style="overflow : auto;">                                     
+                                        <table class="thumbnail_table">
+                                            <tr>
+                                                <th><h3>Most Referenced Websites</h3></th>
+                                                <th></th>
+                                                <th></th>
+                                                <th></th>
+                                                <th></th>
+                                                <th></th>
+                                            </tr>
+                                            <tr valign=top>
+                                                <td> <div id="thumbnail_title_div_0"></div> </td>
+                                                <td> <div id="thumbnail_title_div_1"></div> </td>
+                                                <td> <div id="thumbnail_title_div_2"></div> </td>
+                                                <td> <div id="thumbnail_title_div_3"></div> </td>
+                                                <td> <div id="thumbnail_title_div_4"></div> </td>
+                                                <td> <div id="thumbnail_title_div_5"></div> </td>
+                                                <td> <div id="thumbnail_title_div_6"></div> </td>
+                                                <td> <div id="thumbnail_title_div_7"></div> </td>
+                                                <td> <div id="thumbnail_title_div_8"></div> </td>
+                                                <td> <div id="thumbnail_title_div_9"></div> </td>
+                                            </tr>
+                                            <tr valign=top>
+                                                <td> <div id="thumbnail_div_0"></div> </td>
+                                                <td> <div id="thumbnail_div_1"></div> </td>
+                                                <td> <div id="thumbnail_div_2"></div> </td>
+                                                <td> <div id="thumbnail_div_3"></div> </td>
+                                                <td> <div id="thumbnail_div_4"></div> </td>
+                                                <td> <div id="thumbnail_div_5"></div> </td>
+                                                <td> <div id="thumbnail_div_6"></div> </td>
+                                                <td> <div id="thumbnail_div_7"></div> </td>
+                                                <td> <div id="thumbnail_div_8"></div> </td>
+                                                <td> <div id="thumbnail_div_9"></div> </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    
+                                    <div id="images_div">
+                                        <table class="images_table">
+                                            <tr>
+                                                <th><h3>Popular Images Referenced in Tweets</h3></th>
+                                            </tr>
+                                            <tr valign=top>
+                                                <td>
+                                                    <div id="carousel1" style="width:800px; height:600px; background:#000; overflow:scroll;">            
+                                                        <!-- All images with class of "cloudcarousel" will be turned into carousel items -->
+                                                        <!-- You can place links around these images -->
+                                                    </div>
+                                                    
+                                                    <!-- Define left and right buttons. -->
+                                                    <input id="left_carousel_buttton"  type="image" src="../images/left.png" value="Left" style="width:50px; height:50px; border:0px"/>
+                                                    <input id="right_carousel_buttton" type="image" src="../images/right.png" value="Right" style="width:50px; height:50px;  border:0px" />
+                                                    
+                                                    <!-- Define elements to accept the alt and title text from the images. -->
+                                                    <p id="title-text"></p>
+                                                    <p id="alt-text"></p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div id="demographics_div">
+                                        <h3>Tweets with location data turned on</h3>
+                                        <div id="heatmap_div" style="position:relative; width:790px; height:400px; border:1px dashed black;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                    </div> <!-- end #content -->
+                                                                                           
+                    <div style="clear: both;"></div>
+                    <div id="widebar">
+                        <div id="colA">
+                            <h3>Company</h3>
+                            <dl class="list1">
+                                <li><a href="home/about.html">About Us</a></li>
+                                <li><a href="mailto:support@nebarti.com?Subject=Website%20request">Contact Us</a></li>
+                            </dl>
+                        </div>
+                        <div id="colB">
+                            <h3>Solutions</h3>
+                            <dl class="list1">
+                                <li><a href="home/solutions.html#business_analysis">Business Analysis</a></li>
+                                <li><a href="home/solutions.html#data_analytics">Data Analytics</a></li>
+                                <li><a href="home/solutions.html#distributed_computing">Distributed Computing</a></li>
+                                <li><a href="home/solutions.html#software_architecture_and_design">Software Architecture & Design</a></li>
+                            </dl>
+                        </div>
+                        <div id="colC">
+                            <h3>Clients</h3>
+                            <dl class="list1">
+                                <li><a href="home/clients.html#nbc_universal">NBC Universal</a></li>
+                                <li><a href="home/clients.html#wayin">Wayin</a></li>
+                                <li><a href="home/clients.html#gorilla_logic">Gorilla Logic</li>
+                                <li><a href="home/clients.html#county_of_santa_clara">County of Santa Clara</a></li>
+                                <li><a href="home/clients.html#serge_media">Serge Media</a></li>
+                            </dl>
+                        </div>
+                        <div style="clear: both;">&nbsp;</div>
+                    </div>
+                    <!-- end #widebar -->
+                    
+              <div id="footer">
+                <span class="copyright">Copyright © 2013 Nebarti. All Rights Reserved</span>
+                <span class="links">
+                    -
+                    <a href="about.html">About</a>
+                    - 
+                    <a href="mailto:support@nebarti.com?Subject=Website%20request">Contact</a>
+                </span>
+                    
+              </div>  
+                    
+                    </div> <!-- end #content-wrapper -->
+                    
+               
+                
+            </div> <!-- end #page -->
+            
+            
+                                                            
+        </div> <!-- end #wrapper2 -->
+        
+
+       </div> <!-- end #wrapper -->
+    </body>
+</html>

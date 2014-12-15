@@ -1,0 +1,469 @@
+<!-- 
+   Copyright © Nebarti 2012 All rights reserved.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>Visualization</title>
+        <link rel="shortcut icon" href="../images/favicon.ico"/>
+        <meta name="keywords" content="" />
+        <meta name="description" content="" />
+        <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" />
+        <link rel="stylesheet" href="../css/navigation-menu.css" type="text/css" />
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" type="text/css"/>
+        <script type="text/javascript" src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script> 
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+        <script type="text/javascript">google.load('visualization', '1.1', {packages: ['corechart', 'controls', 'table']});</script>
+        <script type="text/javascript" src="../js/jquery.form.js"></script>
+        <script type="text/javascript" src="../js/date.js"></script>
+
+        <script type="text/javascript">
+            $(document).ready(function() {
+                currentSelectedModelName = $('#modelSelector option:selected').val();
+                
+                // for tabs
+                $("#visualizationTabs").tabs();
+                $('#visualizationTabs').bind('tabsselect', function(event, ui) {
+                    // Objects available in the function context:
+                    ui.tab     // anchor element of the selected (clicked) tab
+                    ui.panel   // element, that contains the selected/clicked tab contents
+                    ui.index   // zero-based index of the selected (clicked) tab
+                    
+                    if (currentSelectedModelName !== 'selectModel') {
+                        if (ui.index === 0) {
+                            google.setOnLoadCallback(drawLineChart());
+                        } else if (ui.index === 1) {
+                            google.setOnLoadCallback(drawReferencesChart());
+                        } else if (ui.index === 2) {
+                            google.setOnLoadCallback(drawWordCountChart());
+                        } else if (ui.index === 3) {
+                            google.setOnLoadCallback(drawEntitiesChart());
+                        } else if (ui.index === 4) {
+                            google.setOnLoadCallback(drawImagesChart());
+                        }
+                    }
+
+                });
+                
+                // query for current models in db
+                $.get("/services/configparams/models", { } ,
+                function(models) {
+                    if (models.length > 1) {
+                        for (var i in models) {
+                            if (models[i] != -1) {
+                                $('#modelSelector').append('<option value=' + models[i].name +'>' + models[i].visibleName + '</option>');                
+                            }
+                        }
+                    } else {
+                        $('#modelSelector').append('<option value=' + models.name + '>' + models.visbleName + '</option>');
+                    }
+                },
+                "json");
+                
+                // handle model selection change
+                $(function() {
+                    $('#modelSelector').change(function() {
+                        currentSelectedModelName = $('#modelSelector option:selected').val();
+                        
+                        if (currentSelectedModelName !== 'selectModel') {
+                            var selectedTab = $("#visualizationTabs").tabs( "option", "selected" );
+                            if (selectedTab === 0) {
+                                google.setOnLoadCallback(drawLineChart());                               
+                            } else if (selectedTab === 1) {
+                                google.setOnLoadCallback(drawReferencesChart());
+                            } else if (selectedTab === 2) {
+                                google.setOnLoadCallback(drawWordCountChart())
+                            } else if (selectedTab === 3) {
+                                google.setOnLoadCallback(drawEntitiesChart())
+                            } else if (selectedTab === 4) {
+                                google.setOnLoadCallback(drawImagesChart())
+                            }
+                        }
+                    }); 
+                });
+                
+                // handle filter change
+                $("input[name=classificationRadioButton]:radio").on("click", function (event, ui) {
+                    var classification = $('input:radio[name=classificationRadioButton]:checked').val();
+                    drawEntitiesChart(classification);
+                });
+                
+                function drawLineChart() { 
+                    clearTabContent();
+                    $.ajax({
+                        async: false,
+                        type: "GET",
+                        url: "/services/models/documents/" + currentSelectedModelName + "/?iDisplayLength=5000",
+                        success: function(obj) {
+                            var documents = obj.aaData;
+
+                            var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard_div'));
+                
+                            var control = new google.visualization.ControlWrapper({
+                                'controlType': 'ChartRangeFilter',
+                                'containerId': 'line_chart_control',
+                                'options': {
+                                    'filterColumnIndex': 0,
+                                    'ui': {
+                                        'chartType': 'LineChart'
+                                    },
+                                    'chartView': {
+                                        'columns': [0, 1, 2, 3]
+                                    },
+                                    'minRangeSize': 86400000
+                                }
+                            });
+                    
+                            var linechartWrapper = new google.visualization.ChartWrapper({
+                                'chartType': 'LineChart',
+                                'containerId': 'line_chart',
+                                'view': {
+                                    'columns': [
+                                        {
+                                            'calc': function(dataTable, rowIndex) {
+                                                return dataTable.getFormattedValue(rowIndex, 0);
+                                            },
+                                            'type': 'string'
+                                        }, 1, 2, 3]
+                                }
+                            });
+                    
+                            var data = new google.visualization.DataTable();             
+                            var classifications;
+                  
+                            $.ajax({
+                                async: false,
+                                type: "GET",
+                                url: "/services/models/classifications/" + currentSelectedModelName + "/",
+                                success: function(obj) {
+                                    data.addColumn('date', 'Date');
+                                    classifications = obj.classifications;
+                                    for (var i in classifications) {
+                                        data.addColumn('number', classifications[i]);   
+                                    }
+                                }
+                            });
+                   
+                            var rowMap = {};
+                            var columnsMap = {};
+                   
+                            for (var n in documents) {
+                                // could define a paremeter to set date to group values by day, month, hour, etc. for plot
+//                                var reviewDate = Date.parse(documents[n].date); 
+//                                if (reviewDate === null) continue;
+//                                reviewDate.set({
+//                                    millisecond: 0,
+//                                    second: 0,
+//                                    minute: 0,
+//                                    hour: 0
+//                                });
+                               // Sun Aug 05 01:29:23 GMT 2012
+                                var reviewDateStr = documents[n].date.substr(4,6).concat(", ");
+                                reviewDateStr = reviewDateStr.concat(documents[n].date.substr(24,4));
+                                var reviewDate = new Date(reviewDateStr);
+                   
+                                // check if date already has values
+                                if (rowMap[reviewDate] == null) {
+                                    var columns = new Array();
+                                    for (i=0; i < classifications.length; i++) {
+                                        if (classifications[i] === documents[n].classification) {
+                                            columns[i] = 1; 
+                                        } else {
+                                            columns[i] = 0;
+                                        }
+                                    }                        
+    
+                                    var row;
+                                    if (columns.length === 3) {
+                                        row = data.addRow([reviewDate, columns[0], columns[1], columns[2]]); 
+                                    }
+                            
+                                    rowMap[reviewDate] = row;
+                                    columnsMap[reviewDate] = columns;
+                            
+                                } else {
+                                    var row = rowMap[reviewDate];
+                                    var columns = columnsMap[reviewDate]; 
+                                    for (i=0; i < classifications.length; i++) {
+                                        if (classifications[i] === documents[n].classification) {
+                                            ++columns[i]; 
+                                            data.setValue(row, i+1, columns[i]);
+                                        } 
+                                    } 
+                                }
+                            }
+                   
+                            data.sort([{column: 0}])              
+                            dashboard.bind(control, linechartWrapper);
+                            dashboard.draw(data); 
+                        }
+                    });
+                 
+                }
+                // end of drawLineChart
+                
+                function drawWordCountChart() {
+                    clearTabContent();
+                    $.ajax({
+                        async: false,
+                        type: "GET",
+                        url: "/services/models/wordcount/" + currentSelectedModelName + "/",
+                        success: function(wordcounts) {
+                                        
+                                    
+                            var data = new google.visualization.DataTable();
+                            data.addColumn('string', 'Word');               
+                            data.addColumn('number', 'Count');
+                
+                            for (var i in wordcounts) {
+                                data.addRow([wordcounts[i].word, parseInt(wordcounts[i].count)]);
+                                if (i > 50) break;
+                            }
+                    
+                            var options = {
+                                title: 'Word Counts',
+                                height: 1000,
+                                width: 850,
+                                yAxis: {
+                                    showTextEvery: 1
+                                }
+                            }; 
+                
+                            var chart = new google.visualization.BarChart(document.getElementById('wordcount-tab'));
+                            chart.draw(data, options);
+                        }
+                    });  
+                }
+                // end of draeWordCountChart
+                
+                function drawReferencesChart() {
+                    clearTabContent();
+                    $.ajax({
+                        async: false,
+                        type: "GET",
+                        url: "/services/models/references/" + currentSelectedModelName + "/",
+                        success: function(references) {
+                            var data = new google.visualization.DataTable();
+                            data.addColumn('string', 'Title');
+                            data.addColumn('string', 'URL');
+                            for (var i in references) {
+                                data.addRows([
+                                    [references[i].title,  '<a href="' + references[i].urlString + '"target="_blank">' + references[i].urlString + '</a>']
+                                ]);
+                            }
+
+                            var table = new google.visualization.Table(document.getElementById('references-tab'));
+                            table.draw(data, {showRowNumber: false, allowHtml:true});          
+                        }
+                    });
+                }
+                // end of drawReferencesChart
+                
+                function drawImagesChart() {
+                    clearTabContent();
+                    $.ajax({
+                        async: false,
+                        type: "GET",
+                        url: "/services/models/images/" + currentSelectedModelName + "/",
+                        success: function(images) {
+                            var data = new google.visualization.DataTable();
+                            data.addColumn('string', 'Images');
+                            for (var i in images) {
+                                data.addRows([
+                                    ['<img src="' + images[i].urlString + '"/>']
+                                ]);
+                            }
+
+                            var table = new google.visualization.Table(document.getElementById('images-tab'));
+                            table.draw(data, {showRowNumber: false, allowHtml:true});          
+                        }
+                    });
+                }
+                // end of drawImagesChart                
+                
+                function clearTabContent() {
+                    $('#wordcount-tab').empty();
+                    $('#coref2').empty();
+                    $('#coref3').empty();
+                    $('#entities').empty();
+                    $('#line_chart').empty();
+                    $('#line_chart_control').empty();
+                    $('#references-tab').empty();
+                    $('#images-tab').empty();
+                    $('#entityfilter_div').empty();
+                }
+                         
+                function drawEntitiesChart(classification) {
+                    clearTabContent();
+                    
+                    var filterHTML = '<fieldset><legend>Filter</legend>';
+                        filterHTML = filterHTML.concat('<label>Categories</label><br />');
+                        
+                        filterHTML = filterHTML.concat('<input type="radio" name="classificationRadioButton" id="all" value="all" checked="checked"/> <label for="all">All Categories</label>');
+                        filterHTML = filterHTML.concat('<input type="radio" name="classificationRadioButton" id="positive" value = "positive" /> <label for="positive">Positive</label>');
+                        filterHTML = filterHTML.concat('<input type="radio" name="classificationRadioButton" id="neutral" value = "neutral"/> <label for="neutral">Neutral</label>');
+                        filterHTML = filterHTML.concat('<input type="radio" name="classificationRadioButton" id="negative" value = "negative"/> <label for="negative">Negative</label>');
+                                     
+                        filterHTML = filterHTML.concat('</fieldset>');
+                                     
+                    $('#entityfilter_div').append(filterHTML);  
+                    
+                    var maxRows = 80;
+                
+                    var coref2data = new google.visualization.DataTable();
+                    coref2data.addColumn('string', "2 Word Co-Reference");
+                
+                    var coref3data = new google.visualization.DataTable();
+                    coref3data.addColumn('string', '3 Word Co-Reference');
+                
+                    var entitiesdata = new google.visualization.DataTable();
+                    entitiesdata.addColumn('string', 'Primary Entities');
+
+                    $.get("/services/models/coreferences/" + currentSelectedModelName + "?count=2" + "&classification=" + classification, { } ,
+                    function(references) {
+                        if (references != null) {
+                            var coreferences = references;
+                        
+                            if (coreferences.length == undefined) {
+                                coref2data.addRow([coreferences.words]);
+                            } else {
+                                for (var i in coreferences) {
+                                    if (i > maxRows-1) break;
+                                    coref2data.addRow([coreferences[i].words]);
+                                }
+                            }
+                        }
+
+                        var chart = new google.visualization.Table(document.getElementById('coref2'));
+                        chart.draw(coref2data, {allowHtml:true});                    
+                    },
+                    "json");
+                
+                    $.get("/services/models/coreferences/" + currentSelectedModelName + "?count=3" + "&classification=" + classification, { } ,
+                    function(references) {
+                        if (references != null) {
+                            var coreferences = references;
+                    
+                            if (coreferences.length == undefined) {
+                                coref3data.addRow([coreferences[i].words]);
+                            } else {
+                                for (var i in coreferences) {
+                                    if (i > maxRows-1) break;
+                                    coref3data.addRow([coreferences[i].words]);
+                                }
+                            }
+                        }
+
+                        var chart = new google.visualization.Table(document.getElementById('coref3'));
+                        chart.draw(coref3data, {allowHtml:true});                                        
+                    },
+                    "json");
+                
+                    $.get("/services/models/entities/" + currentSelectedModelName + "?classification=" + classification, { } ,
+                    function(entities) {
+                        if (entities != null) {
+                            var namedEntities = entities.namedEntity;
+                            var namedEntities = entities;
+                    
+                            if (namedEntities.length == undefined) {
+                                entitiesdata.addRow([namedEntities.type  + ":  " + namedEntities.phrase]);
+                            } else {
+                                for (var i in namedEntities) {
+                                    if (i > maxRows-1) break;                             
+                                    entitiesdata.addRow([namedEntities[i].type + ":  " + namedEntities[i].phrase]);
+                                }
+                            }
+                        }
+                    
+                        var chart = new google.visualization.Table(document.getElementById('entities'));
+                        chart.draw(entitiesdata, {allowHtml:true});                   
+                    },
+                    "json");
+
+                }
+                // end of drawEntitiesChart
+            
+            }); // end of $(document).ready(function()
+        </script>
+    </head>
+
+    <body>
+        <div id="wrapper">
+            <div id="wrapper2">
+                <div id="header">
+                    <div id="logo">
+                        <h1><a href="/">Nebarti</h1>
+                    </div>
+                    <div id="menu">
+                        <nav role="navigation">
+                            <ul id="nav">
+                                <li tabindex="0"><a href="#">Tools</a>
+                                    <ul class="submenu" tabindex="0">
+                                        <li tabindex="0"><a href="./models.html">Models</a></li>
+                                        <li tabindex="0"><a href="#">Visualization</a></li>
+                                        <li tabindex="0"><a href="./supervisedLearning.html">Supervised Learning</a></li>
+                                    </ul>
+                                </li>
+                                <li><a href="../demos/book_reviews.html">Demos</a></li>
+                                <li><a href="#">About</a></li>
+                                <li><a href="mailto:administrator@idotanalytics.com?Subject=Website%20request">Contact</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                <!-- end #header -->
+
+                <div id="page">
+
+                    <div id="visualization"> 
+                        <div id="visualizationTabs">
+                            <h2 class="title">Visualization</h2>
+                            <select id="modelSelector">
+                                <option value="selectModel" selected="selected">Select Model...</option>
+                            </select>
+                            
+                            <ul>
+                                <li><a href="#linechart-tab">Line Chart</a></li>
+                                <li><a href="#references-tab">References</a></li> 
+                                <li><a href="#wordcount-tab">Word Count</a></li>
+                                <li><a href="#entities-tab">Entities</a></li> 
+                                <li><a href="#images-tab">Images</a></li>
+                            </ul>
+
+                            <div id="wordcount-tab"></div>
+                            <div id="entities-tab">
+                                <div id="entityfilter_div"></div>
+                                <table border="0">
+                                    <tr valign=top>
+                                        <td> <div id="coref2"></div> </td>
+                                        <td> <div id="coref3"></div> </td>
+                                        <td> <div id="entities"></div> </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div id="linechart-tab">
+                                <div id="dashboard_div">
+                                    <div id="line_chart"></div>
+                                    <div id="line_chart_control" style='margin-top: 50px; height: 100px'></div>
+                                </div>
+                            </div>
+                            <div id="references-tab"></div>
+                            <div id="images-tab"></div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+                <!-- end #page -->
+            </div>
+            <!-- end #wrapper2 -->
+            <div id="footer">
+                <p>(c) 2012.</p>
+            </div>
+        </div>
+        <!-- end #wrapper --> 
+    </body>
+</html>

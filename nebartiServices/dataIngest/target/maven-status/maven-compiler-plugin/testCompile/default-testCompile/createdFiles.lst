@@ -1,0 +1,4 @@
+com/idot/dataingest/twitter/TwitterProcessorExecutorServiceTest.class
+com/idot/dataingest/wordcount/WordCountSummarizerTest.class
+com/idot/dataingest/twitter/TwitterProcessorTest.class
+com/idot/dataingest/twitter/AccessTokenHandlerTest.class

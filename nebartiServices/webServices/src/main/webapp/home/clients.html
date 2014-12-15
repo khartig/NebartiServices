@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- 
+   Nebarti
+   Copyright © 2013. All rights reserved.
+-->
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>Nebarti</title>
+        <link rel="shortcut icon" href="../images/favicon.ico"/>
+        <meta name="keywords" content="social media, data analytics, sentiment, real time, self-service analytics,
+                                       data discovery, advanced visualization, visual analytics, visual analytics,
+                                       self-serve business intelligence, BI 3.0, Nebarti, SAAS, Sentiment as a Service" />
+        <meta name="description" content="Live data feed analytics services. Nebarti provides simple to use tools for
+              extracting meaning from text published on the web. Nebarti web service tools provide sentiment analysis and
+              summarize most commonly referenced discussion points, images and web sites. Data filtering for demographics
+              and text classification is also provided." />
+        <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" />
+        <script type="text/javascript" src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $("#politics_ul_div").hide();
+            });
+            
+            // google analytics
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-34681660-1']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+            // google analytics
+            
+            // sidebar links
+            politics_items_visible = false; 
+            function toggleMenu(menuGroup) {
+                if (politics_items_visible === false) {
+                    $("#politics_ul_div").slideDown();
+                    politics_items_visible = true;
+                } else {
+                    $("#politics_ul_div").slideUp();
+                    politics_items_visible = false;
+                }
+                return false;
+            }
+            
+       </script>
+    </head>
+    <body>
+        <div id="wrapper">
+            <div id="wrapper2">             
+                <div id="header">                   
+                    <div id="logo">
+                        <h1><a href="/">Nebarti</a></h1>
+                    </div>
+                </div>
+                <!-- end #header -->
+                <div id="page">
+                    <div style="clear: both;">&nbsp;</div>
+                    <div id="content">
+                        <div class="post">
+                            <h2 class="title">Clients</h2>
+                            <div class="entry">
+                            </div>
+                        </div>
+                        <div class="post">
+                            <h3 class="title"><a name="nbc_universal">NBC Universal</a></h3>
+                            <div class="entry" style="padding-right: 50px"> 
+                                <a href="http://nbcuni.com">
+                                    <img src="../images/nbc_universal_logo.jpeg" align="left" height="100" width="100" border="0" alt="NBC Universal" style="padding-right: 10px;"/>
+                                </a>
+                                Video clip recommendation software development used to calculate which clips to present 
+                                on the nbc.com website based on current users and cumulative user behavior.
+                            </div>
+                        </div>
+                        
+                        <div class="post" style="clear: both;">
+                            <h3 class="title"><a name="wayin">Wayin</a></h3>
+                            <div class="entry" style="padding-right: 50px">
+                                <a href="http://wayin.com">
+                                    <img src="../images/wayin_logo.jpeg" align="left" height="100" width="100" border="0" alt="Wayin" style="padding-right: 10px;"/>
+                                </a>
+                                Construction of user profile recommendation engine using Mahout recommending Wayin social network
+                                members with similar preferences and behavior to follow.
+                            </div>
+                        </div>
+                        
+                        <div class="post" style="clear: both;">
+                            <h3 class="title"><a name="gorilla_logic">Gorilla Logic</a></h3>
+                            <div class="entry" style="padding-right: 50px">
+                                <a href="http://gorillalogic.com">
+                                    <img src="../images/gorillalogic_logo.gif" align="left" height="100" width="100" border="0" alt="Gorilla Logic" style="padding-right: 10px;"/>
+                                </a>
+                                Subcontract on key software development and architecture projects.
+                            </div>
+                        </div>
+                        
+                        <div class="post" style="clear: both;">
+                            <h3 class="title"><a name="county_of_santa_clara">County of Santa Clara, California</a></h3>
+                            <div class="entry" style="padding-right: 50px">
+                                <a href="http://sccgov.org">
+                                    <img src="../images/CoSealCol_logo.jpeg" align="left" height="100" width="100" border="0" alt="The County of Santa Clara" style="padding-right: 10px;"/>
+                                </a>
+                                Business analysis, user experience and testing, project leadership for the 
+                                county's Tax Collection and Apportionment Systems.
+                            </div>
+                        </div>
+                        
+                        <div class="post" style="clear: both;">
+                            <h3 class="title"><a name="serge_media">Serge Media</a></h3>
+                            <div class="entry" style="padding-right: 50px">
+                                <a href="http://sergesdk.com">
+                                    <img src="../images/serge_media_logo.jpeg" align="left" height="100" width="100" border="0" alt="Serge Media Corporation" style="padding-right: 10px;"/>
+                                </a>
+                                Image recognition system development and production deployment. Custom algorithm development for 
+                                recognizing images captured with smart phones.
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end #content -->
+                    
+                    <div style="clear: both;">&nbsp;</div>
+                    <div id="widebar">
+                        <div id="colA">
+                            <h3>Company</h3>
+                            <dl class="list1">
+                                <li><a href="about.html">About Us</a></li>
+                                <li><a href="mailto:support@nebarti.com?Subject=Website%20request">Contact Us</a></li>
+                            </dl>
+                        </div>
+                        <div id="colB">
+                            <h3>Solutions</h3>
+                            <dl class="list1">
+                                <li><a href="solutions.html#business_analysis">Business Analysis</a></li>
+                                <li><a href="solutions.html#data_analytics">Data Analytics</a></li>
+                                <li><a href="solutions.html#distributed_computing">Distributed Computing</a></li>
+                                <li><a href="solutions.html#software_architecture_and_design">Software Architecture & Design</a></li>
+                            </dl>
+                        </div>
+                        <div id="colC">
+                            <h3>Clients</h3>
+                            <dl class="list1">
+                                <li><a href="#nbc_universal">NBC Universal</a></li>
+                                <li><a href="#wayin">Wayin</a></li>
+                                <li><a href="#gorilla_logic">Gorilla Logic</li>
+                                <li><a href="#county_of_santa_clara">County of Santa Clara</a></li>
+                                <li><a href="#serge_media">Serge Media</a></li>
+                            </dl>
+                        </div>
+                        <div style="clear: both;">&nbsp;</div>
+                    </div>
+                    <!-- end #widebar -->
+                </div>
+                <!-- end #page -->
+            </div>
+            <!-- end #wrapper2 -->
+            <div id="footer">
+                <span class="copyright">Copyright © 2013 Nebarti. All Rights Reserved</span>
+                <span class="links">
+                    -
+                    <a href="about.html">About</a>
+                    - 
+                    <a href="mailto:support@nebarti.com?Subject=Website%20request">Contact</a>
+                </span>
+            </div>
+        </div>
+        <!-- end #wrapper -->
+    </body>
+</html>

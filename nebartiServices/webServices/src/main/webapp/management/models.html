@@ -1,0 +1,503 @@
+<!-- 
+   Copyright © 2012 Nebarti. All rights reserved.
+-->
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Nebarti - Tools</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <link rel="shortcut icon" href="../images/favicon.ico"/>
+        <meta name="keywords" content="" />
+        <meta name="description" content="" />
+        
+        <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" />
+        <link rel="stylesheet" href="../css/ui/jquery-ui.css" type="text/css" />
+        <link rel="stylesheet" href="../css/jquery.multiselect.css" type="text/css" />
+        <link rel="stylesheet" href="../css/navigation-menu.css" type="text/css" />
+        
+        <script type="text/javascript" src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>             
+        <script type="text/javascript" src="../js/ui/jquery-ui-1.9.0m8.min.js"></script>
+        <script type="text/javascript" src="../js/jquery.multiselect.min.js"></script>
+
+        <script type="text/javascript">
+            $(document).ready(function() {     
+                $("#classifierMenu").menu();    // to create the classifier flyout menu
+                $("#clearClassifierForm").button();               
+                $("#deleteClassifierForm").button();
+                $("#saveClassifierForm").button();
+                
+                $("#classifier-form-error-dialog").hide(); // hides the popup dialog div form
+                $(function() {
+                    $("#classifier-form-error-dialog").dialog({
+                        resizable: false,
+                        height:140,
+                        autoOpen: false,
+                        modal: true,
+                        buttons: {
+                            "OK": function() {
+                                $(this).dialog("close");
+                            }
+                        }
+                    });
+                });
+                
+                // use multiselect for selection lists
+                // http://www.erichynds.com/jquery/jquery-ui-multiselect-widget/ 
+                $(function() {
+                    $("#listClassifierCategorySelector").multiselect({
+                        header: "Selection Required!",
+                        height: "auto",
+                        noneSelectedText: "Select classifier category",
+                        selectedList: 1,
+                        multiple: false
+                    });                  
+                });
+                
+                $(function() {
+                    $("#listDataSourceSelector").multiselect({
+                        height: "auto",
+                        noneSelectedText: "Select data sources",
+                        selectedText: "# of # selected"
+                    });                  
+                });
+                
+                $(function() {
+                    $("#listClassificationTypeSelector").multiselect({
+                        header: "Selection Required!",
+                        height: "auto",
+                        noneSelectedText: "Select classification type",
+                        selectedList: 1,
+                        multiple: false,
+                        click: function(event, ui) {;
+                            setModelSelectorList(ui.value);
+                        }
+                    });                  
+                });
+                
+                $(function() {
+                    $("#listModelSelector").multiselect({
+                        header: "Selection Required!",
+                        height: "auto",
+                        noneSelectedText: "Select model for classification",
+                        selectedList: 1,
+                        multiple: false
+                    });                  
+                });                         
+                
+                
+                // initialize classifier dialog
+                $(function() {
+                    initClassifierList();
+                    initClassifierDialog("");
+                });
+                
+                // Set the models in the model selection list corresponding to the classification type
+                function setModelSelectorList(classification) {
+                    if ($('#listModelSelector').children().length > 0) {
+                        $('#listModelSelector').children().remove();
+                        $('#listModelSelector').multiselect("refresh");
+                    }
+                    
+                    // populate model selector list
+                    $.ajax({
+                        async: false,
+                        type: 'GET',
+                        contentType: 'application/json',
+                        url: "/services/configparams/models/" + classification,
+                        success: function(models, textStatus, jqXHR){
+                            $('#listModelSelector').append('<option value="newmodel">New Model</option>');
+                            for (var i in models) {
+                                $('#listModelSelector').append('<option value=' + models[i].name +'>' + models[i].visibleName + '</option>'); 
+                            }
+                            $("#listModelSelector").val(models[0].name);
+                            $("#listModelSelector").multiselect("refresh");                                    
+                        },
+                        error: function(jqXHR, textStatus, errorThrown){
+                            alert('Error getting models for classifier : ' + classification);
+                        }
+                    });
+                }
+                                                              
+                // populate the classifier categories and classifier lists
+                function initClassifierList() {
+                    $.ajax({
+                        type: 'GET',
+                        contentType: 'application/json',
+                        url: "/services/configparams/classifierCategories",
+                        success: function(categories, textStatus, jqXHR){
+                            // remove existing items
+                            $('#classifierMenu').children().remove();
+                            
+                            for (var i in categories) {
+                                // append catgories to classifier selection list
+                                $('#classifierMenu').append('<li id="listCategory-' + categories[i].name + '" value="' + categories[i].id +'"><a href="#">' + categories[i].visibleName + '</a></li>'); 
+                            
+                                // pull classifiers for each category
+                                $.ajax({
+                                    type: 'GET',
+                                    contentType: 'application/json',
+                                    url: "/services/configparams/classifiersforcategory/" + categories[i].id,
+                                    success: function(classifiers, textStatus, jqXHR){
+                                        var elementName;
+                                        var subList = "";
+                                        for (var n in classifiers) { 
+                                            if (classifiers[n].name == "default_classifier_settings") {
+                                                initClassifierDialog(classifiers[n].id);
+                                            } else {
+                                                subList = subList + '<li id="' + classifiers[n].id + '"><a href="#">' + classifiers[n].visibleName + '</a></li>';             
+                                                elementName = "#listCategory-" + classifiers[n].category;
+                                            }
+                                        }
+                                    
+                                        $(elementName).append("<ul>" + subList + "</ul>");
+                                        $('#classifierMenu').menu("refresh");
+                                    },
+                                    error: function(jqXHR, textStatus, errorThrown){
+                                        alert('Error getting classifier list for category: ' + textStatus);
+                                    }
+                                });
+                            }
+                        
+                            $('#classifierMenu').menu({
+                                select: function(event, ui) {
+                                    if (ui.item[0].id.indexOf('listCategory-') == -1) { // ignore category list items
+                                        // alert("Item " + ui.item[0].id + " selected.");
+                                        initClassifierDialog(ui.item[0].id);
+                                    }
+                                }
+                            }); 
+                        
+                            $('#classifierMenu').menu("enable");
+                        
+                        },
+                        error: function(jqXHR, textStatus, errorThrown){
+                            alert('Error getting classifier categories list: ' + textStatus);
+                        }
+                    });
+                }                
+            
+                // clear form button control
+                $("#clearClassifierForm")
+                .click(function() {
+                    clearClassifierDialog();
+                });
+                                             
+                // save or update classifier info currently loaded in form
+                $("#saveClassifierForm")
+                .click(function() {
+                    saveClassifier();
+                }); 
+                    
+                // delete a classifier record
+                $("#deleteClassifierForm")
+                .click(function() {
+                    $.ajax({
+                        type: 'DELETE',
+                        contentType: 'application/json',
+                        url: "/services/configparams/classifiers/" + $('#classifierId').val(),
+                        dataType: 'json',
+                        success: function(data, textStatus, jqXHR){
+                            initClassifierList();
+                            clearClassifierDialog();
+                            alert('Classifier deleted successfully');
+                        },
+                        error: function(jqXHR, textStatus, errorThrown){
+                            alert('classifier delete error: ' + textStatus);
+                        }
+                    });
+                }); 
+                
+                function initClassifierDialog(classifierId) {
+                    
+                    if (classifierId !== "") {
+                        // get classifier by id and update classifier form values
+                        $.ajax({
+                            type: 'GET',
+                            contentType: 'application/json',
+                            url: "/services/configparams/classifiers/" + classifierId,
+                            success: function(classifier, textStatus, jqXHR){
+                                $('#classifierId').val(classifier.id);
+                                $('#classifierName').val(classifier.visibleName); 
+                                
+                                $('#listClassifierCategorySelector').val(classifier.category);
+                                $('#listClassifierCategorySelector').multiselect("refresh");
+                                
+                                $("#listDataSourceSelector").multiselect("uncheckAll");
+                                $('#listDataSourceSelector').multiselect("refresh");
+                                for (var i in classifier.dataSources) {
+                                    var optionId = "#datasourceoption-" + classifier.dataSources[i];
+                                
+                                    $("#listDataSourceSelector").multiselect("widget").find(optionId).each(function(){
+                                        this.click();
+                                    });
+                                }
+                                $('#listDataSourceSelector').multiselect("refresh");
+                                
+                                $('#listClassificationTypeSelector').val(classifier.classificationSet);
+                                $('#listClassificationTypeSelector').multiselect("refresh");
+                                setModelSelectorList(classifier.classificationSet);                           
+                                
+                                $('#listModelSelector').val(classifier.model);
+                                $('#listModelSelector').multiselect("refresh");
+                                
+                                $('#filterText').val(classifier.filter);
+                                
+                                if (classifier.dataFeedSwitch) {
+                                    $('#dataFeedSwitch').prop("checked", true);
+                                } else {
+                                    $('#dataFeedSwitch').prop("checked", false);   
+                                }
+                                                              
+                            },
+                            error: function(jqXHR, textStatus, errorThrown){
+                                alert('error getting classifier category list: ' + textStatus);
+                            }
+                        });
+                    } else {
+                        $('#classifierId').val('');
+                        $('#classifierName').val('');
+                        $('#filterText').val('');
+                        $('#dataFeedSwitch').prop("checked", false);
+                        
+                        // populate classifier category selector list
+                        $.ajax({
+                            type: 'GET',
+                            contentType: 'application/json',
+                            url: "/services/configparams/classifierCategories",
+                            success: function(categories, textStatus, jqXHR){
+                                for (var i in categories) {
+                                    $('#listClassifierCategorySelector').append('<option value=' + categories[i].name +'>' + categories[i].visibleName + '</option>'); 
+                                }
+                                $('#listClassifierCategorySelector').val(categories[0].name);
+                                $("#listClassifierCategorySelector").multiselect("refresh");                                    
+                            },
+                            error: function(jqXHR, textStatus, errorThrown){
+                                alert('error getting classifier category list: ' + textStatus);
+                            }
+                        });
+                    
+                        // populate classification type selector list
+                        $.ajax({
+                            type: 'GET',
+                            contentType: 'application/json',
+                            url: "/services/configparams/classificationtypes",
+                            success: function(classificationTypes, textStatus, jqXHR){
+                                for (var i in classificationTypes) {
+                                    $('#listClassificationTypeSelector').append('<option value=' + classificationTypes[i].name +'>' + classificationTypes[i].visibleName + '</option>'); 
+                                }
+                                $("#listClassificationTypeSelector").val(classificationTypes[0].name);
+                                $("#listClassificationTypeSelector").multiselect("refresh");
+                                
+                                setModelSelectorList(classificationTypes[0].name);
+                            },
+                            error: function(jqXHR, textStatus, errorThrown){
+                                alert('error getting classifier list: ' + textStatus);
+                            }
+                        });
+                    
+                        // populate data source selector list
+                        $.ajax({
+                            type: 'GET',
+                            contentType: 'application/json',
+                            url: "/services/configparams/datasourcenames",
+                            success: function(datasources, textStatus, jqXHR){
+                                for (var i in datasources) {
+                                    $('#listDataSourceSelector').append('<option id="datasourceoption-' + datasources[i] + '" value=' + datasources[i] +'>' + datasources[i] + '</option>');  
+                                }
+                                
+                                $("#listDataSourceSelector").multiselect("refresh");
+                                
+                                var optionId = "#datasourceoption-" + datasources[0];
+                                $("#listDataSourceSelector").multiselect("widget").find(optionId).each(function(){
+                                    this.click();
+                                });
+                                $("#listDataSourceSelector").multiselect("refresh");                                    
+                            },
+                            error: function(jqXHR, textStatus, errorThrown){
+                                alert('error getting data sources: ' + textStatus);
+                            }
+                        });
+                                              
+                    }
+                                       
+                }
+                
+                function clearClassifierDialog() {
+                    // clear the form
+                    $('#classifierId').val('');
+                    $('#classifierName').val('');
+                    $('#filterText').val('');
+                    $('#dataFeedSwitch').prop("checked", false);
+                        
+                    if ($('#listClassifierCategorySelector').children().length > 0) {
+                        $('#listClassifierCategorySelector').children().remove();
+                        $('#listClassifierCategorySelector').multiselect("refresh");
+                    }
+                    
+                    if ($('#listClassificationTypeSelector').children().length > 0) {
+                        $('#listClassificationTypeSelector').children().remove();
+                        $('#listClassificationTypeSelector').multiselect("refresh");
+                    }
+                        
+                    if ($('#listDataSourceSelector').children().length > 0) {
+                        $('#listDataSourceSelector').children().remove();
+                        $('#listDataSourceSelector').multiselect("refresh");
+                    }                      
+                        
+                    if ($('#listModelSelector').children().length > 0) {
+                        $('#listModelSelector').children().remove();
+                        $('#listModelSelector').multiselect("refresh");
+                    }
+                        
+                    initClassifierDialog("");                
+                }
+                
+                function saveClassifier() {
+                    if ( validateForm() ) {
+
+                        var dataFeedSwitch = false;
+                        if ($('#dataFeedSwitch').is(':checked')) {
+                            dataFeedSwitch = true;
+                        }
+                        var formdata = JSON.stringify({
+                            "id": $('#classifierId').val(),
+                            "visibleName": $('#classifierName').val(),
+                            "category": $('#listClassifierCategorySelector').val().toString(),
+                            "dataSources": $('#listDataSourceSelector').val(),
+                            "classificationSet": $('#listClassificationTypeSelector').val().toString(),
+                            "model": $('#listModelSelector').val().toString(),
+                            "filter": $('#filterText').val(),
+                            "owner": "",
+                            "dataFeedSwitch": dataFeedSwitch
+                        });
+                                               
+                        $.ajax({
+                            type: 'POST',
+                            contentType: 'application/json',
+                            url: "/services/configparams/classifiers",
+                            dataType: 'json',
+                            data: formdata,
+                            processData: false,
+                            success: function(classifier, textStatus, jqXHR){
+                                $('#classifierId').val(classifier.id);
+                                initClassifierList();
+                                alert('Controller saved successfully');
+                            },
+                            error: function(jqXHR, textStatus, errorThrown){
+                                alert('Controller save error: ' + textStatus);
+                            }
+                        });
+                    
+                    }
+                }
+                                                
+                // Validate the current form contents. Make sure all required fields
+                // contain values.            
+                function validateForm() {
+                    if ( !$('#classifierName').val() || !$('#filterText').val() ||
+                         !$('#listDataSourceSelector option:selected').length ) {
+                         
+                        $("#classifier-form-error-dialog").dialog("open");
+                        return false;
+                    }
+                    return true;
+                } 
+            
+            });  // end of $(document).ready section            
+                
+        </script>
+    </head>
+    <body>
+        <div id="wrapper">
+            <div id="wrapper2">
+                <div id="header">
+                    <div id="logo">
+                        <h1><a href="/">Nebarti</a></h1>
+                    </div>
+                    <div id="menu">
+                        <nav role="navigation">
+                        <ul id="nav">
+                            <li tabindex="0"><a href="#">Tools</a>
+                                <ul class="submenu" tabindex="0">
+                                    <li tabindex="0"><a href="#">Models</a></li>
+                                    <li tabindex="0"><a href="./supervisedLearning.html">Supervised Learning</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        </nav>
+                    </div>
+                </div>
+                <!-- end #header -->
+
+                <div id="page">
+                    <div id="tabbedcontent">
+                        <div id="tabs">
+                            <h2 class="title">Model Management</h2>
+
+                            <!-- interface to manage model components -->
+                            <div id="classifier-tab" class="classifierContent" >
+
+                                <!-- error dialog -->
+                                <div id="classifier-form-error-dialog" title="Mandatory selections missing">
+                                    <p>
+                                        <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>
+                                        Mandatory data fields are not completed. <br /><br />
+                                    </p>
+                                </div>
+
+                                <div id="classifier-list">
+                                    <h3>Select Controller</h3>
+                                    <ul id="classifierMenu" style="width: 120px;">
+                                        <!-- list content populated dynamically -->
+                                    </ul>
+                                </div>
+                                <div id="classifier-form">
+                                    <h3>Create or Edit Controller</h3>
+                                    <input type="hidden" id="classifierId" value="" />
+                                    <label>Controller Name</label><br />
+                                    <input type="text" id="classifierName" required="required" placeholder="Controller Name Required" autofocus="autofocus" style="width: 213px" />
+                                    <br /><br />
+                                    <label>Controller Category</label><br />
+                                    <select title="classifierCategory" multiple="multiple" id="listClassifierCategorySelector" size="2"></select>
+                                    <br /><br />
+                                    <label>Data Sources</label><br />
+                                    <select title="dataSources" multiple="multiple" id="listDataSourceSelector" size="2"></select>
+                                    <br /><br />
+                                    <label>Classification Types</label><br />
+                                    <select title="classifierTypes" multiple="multiple" id="listClassificationTypeSelector" size="2"></select>
+                                    <br /><br />
+                                    <label>Processing Models</label><br />
+                                    <select title="models" multiple="multiple" id="listModelSelector" size="2"></select>
+                                    <br /><br />
+                                    <label>Filter</label><br />
+                                    <input type="text" id="filterText" required="required" placeholder="Filter Text Required" style="width: 213px" /><br /><br />
+                                    <input type="checkbox" id="dataFeedSwitch" />
+                                    <label>Turn Data Feed On</label>
+                                    <br /><br />
+                                    <button id="clearClassifierForm" title="Clear classifier form">Clear</button>
+                                    <button id="deleteClassifierForm" title="Delete current classifier">Delete</button>
+                                    <button id="saveClassifierForm" title="Save new or edited classifier">Save</button>
+                                </div>
+                            </div> <!-- end of classifier-tab -->
+
+                        </div> 
+                        <!-- end tab group -->
+                    </div>
+                    <!-- end tabbed content group -->
+                </div>
+                <!-- end of page -->
+            </div>
+            <!-- end of wrapper2 -->
+            <div id="footer">
+                <span class="copyright">Copyright © 2012 Nebarti. All Rights Reserved</span>
+                <span class="links">
+                    -
+                    <a href="../home/about.html">About</a>
+                    - 
+                    <a href="mailto:support@nebarti.com?Subject=Website%20request">Contact</a>
+                </span>
+            </div>
+        </div>
+        <!-- end of wrapper -->
+    </body>
+</html>

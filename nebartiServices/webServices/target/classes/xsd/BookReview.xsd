@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:complexType name="bookreview">
+    <xs:sequence>
+      <xs:element name="sets" type="xs:string" minOccurs="0"/>
+      <xs:element name="voice" type="xs:string" minOccurs="0"/>
+      <xs:element name="name" type="xs:string" minOccurs="0"/>
+      <xs:element name="date" type="xs:string" minOccurs="0"/>
+      <xs:element name="text" type="xs:string" minOccurs="0"/>
+      <xs:element name="bookRank" type="xs:string" minOccurs="0"/>
+      <xs:element name="author" type="xs:string" minOccurs="0"/>
+      <xs:element name="avgReview" type="xs:string" minOccurs="0"/>
+      <xs:element name="bestSellerPosition" type="xs:string" minOccurs="0"/>
+      <xs:element name="edition" type="xs:string" minOccurs="0"/>
+      <xs:element name="helpful" type="xs:string" minOccurs="0"/>
+      <xs:element name="helpfulPercent" type="xs:string" minOccurs="0"/>
+      <xs:element name="listDate" type="xs:string" minOccurs="0"/>
+      <xs:element name="listName" type="xs:string" minOccurs="0"/>
+      <xs:element name="numberReview" type="xs:string" minOccurs="0"/>
+      <xs:element name="pages" type="xs:string" minOccurs="0"/>
+      <xs:element name="publisher" type="xs:string" minOccurs="0"/>
+      <xs:element name="reviewTitle" type="xs:string" minOccurs="0"/>
+      <xs:element name="reviewerName" type="xs:string" minOccurs="0"/>
+      <xs:element name="reviewDate" type="xs:string" minOccurs="0"/>
+      <xs:element name="reviewLocation" type="xs:string" minOccurs="0"/>
+      <xs:element name="reviewRating" type="xs:string" minOccurs="0"/>
+      <xs:element name="title" type="xs:string" minOccurs="0"/>
+      <xs:element name="total" type="xs:string" minOccurs="0"/>
+      <xs:element name="classification" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string"/>
+  </xs:complexType>
+</xs:schema>
+

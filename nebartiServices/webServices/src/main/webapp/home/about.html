@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- 
+   Nebarti
+   Copyright © 2013. All rights reserved.
+-->
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>Nebarti</title>
+        <link rel="shortcut icon" href="../images/favicon.ico"/>
+        <meta name="keywords" content="social media, data analytics, sentiment, real time, self-service analytics,
+                                       data discovery, advanced visualization, visual analytics, visual analytics,
+                                       self-serve business intelligence, BI 3.0, Nebarti, SAAS, Sentiment as a Service" />
+        <meta name="description" content="Live data feed analytics services. Nebarti provides simple to use tools for
+              extracting meaning from text published on the web. Nebarti web service tools provide sentiment analysis and
+              summarize most commonly referenced discussion points, images and web sites. Data filtering for demographics
+              and text classification is also provided." />
+        <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" />
+        <script type="text/javascript" src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $("#politics_ul_div").hide();
+            });
+            
+            // google analytics
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-34681660-1']);
+            _gaq.push(['_trackPageview']);
+
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+            // google analytics
+            
+            // sidebar links
+            politics_items_visible = false; 
+            function toggleMenu(menuGroup) {
+                if (politics_items_visible === false) {
+                    $("#politics_ul_div").slideDown();
+                    politics_items_visible = true;
+                } else {
+                    $("#politics_ul_div").slideUp();
+                    politics_items_visible = false;
+                }
+                return false;
+            }
+            
+       </script>
+    </head>
+    <body>
+        <div id="wrapper">
+            <div id="wrapper2">             
+                <div id="header">                   
+                    <div id="logo">
+                        <h1><a href="/">Nebarti</a></h1>
+                    </div>
+                </div>
+                <!-- end #header -->
+                <div id="page">
+                    <div style="clear: both;">&nbsp;</div>
+                    <div id="content">
+                        <div class="post">
+                            <h2 class="title">Team Members</h2>
+                            <div class="entry">
+                            </div>
+                        </div>
+                        <div class="post">
+                            <h3 class="title">Kevin Hartig, Principal</h3>
+                            <div class="entry" style="padding-right: 50px"> 
+                                Kevin currently directs and constructs projects using new software technologies 
+                                and methodologies to demonstrate the feasibility of new concepts in real business applications
+                                and then helps drive the concepts to production. Currently performing Distributed 
+                                Computing Infrastructure, Data Analytics Software and Complex Algorithm design, 
+                                development and consulting. Kevin has developed recommendations systems, image recognition
+                                systems and distributed computing systems for data analytics.
+                            </div>
+                        </div>
+                        
+                        <div class="post">
+                            <h3 class="title">Josephine Race, Partner</h3>
+                            <div class="entry" style="padding-right: 50px"> 
+                                Josephine is a business partner defining corporate direction and business development.
+                                She currently contracts as a Business Analyst defining and developing Tax 
+                                Collection and Apportionment Systems. She has also run her own company performing 
+                                Internet development and communications services.
+                                
+                                She is a registered private equity and finance consultant accepting inquiries from 
+                                independent oil and gas and alternative energy companies, investors, industry/JV 
+                                partners.
+                                
+                                Previous to that, she was a Registered Representative and Financial Advisor at Morgan Stanley, 
+                                specializing in corporate planning.
+                                
+                                Also she participated as Board member, committee chair and VP providing marketing & communications services 
+                                for Peak Venture Group networking organization supporting start-up and middle-market entrepreneurs.   
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end #content -->
+                    
+                    <div style="clear: both;">&nbsp;</div>
+                    <div id="widebar">
+                        <div id="colA">
+                            <h3>Company</h3>
+                            <dl class="list1">
+                                <li><a href="#">About Us</a></li>
+                                <li><a href="mailto:support@nebarti.com?Subject=Website%20request">Contact Us</a></li>
+                            </dl>
+                        </div>
+                        <div id="colB">
+                            <h3>Solutions</h3>
+                            <dl class="list1">
+                                <li><a href="#">Business Analysis</a></li>
+                                <li><a href="#">Data Analytics</a></li>
+                                <li><a href="#">Distributed Computing</a></li>
+                                
+                                <li><a href="#">Software Architecture & Design</a></li>
+                            </dl>
+                        </div>
+                        <div id="colC">
+                            <h3>Clients</h3>
+                            <dl class="list1">
+                                <li><a href="clients.html#nbc_universal">NBC Universal</a></li>
+                                <li><a href="clients.html#wayin">Wayin</a></li>
+                                <li><a href="clients.html#gorilla_logic">Gorilla Logic</li>
+                                <li><a href="clients.html#county_of_santa_clara">County of Santa Clara</a></li>
+                                <li><a href="clients.html#serge_media">Serge Media</a></li>
+                            </dl>
+                        </div>
+                        <div style="clear: both;">&nbsp;</div>
+                    </div>
+                    <!-- end #widebar -->
+                </div>
+                <!-- end #page -->
+            </div>
+            <!-- end #wrapper2 -->
+            <div id="footer">
+                <span class="copyright">Copyright © 2013 Nebarti. All Rights Reserved</span>
+                <span class="links">
+                    -
+                    <a href="#">About</a>
+                    - 
+                    <a href="mailto:support@nebarti.com?Subject=Website%20request">Contact</a>
+                </span>
+            </div>
+        </div>
+        <!-- end #wrapper -->
+    </body>
+</html>

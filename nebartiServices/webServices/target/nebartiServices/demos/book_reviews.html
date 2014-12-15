@@ -1,0 +1,534 @@
+<!-- 
+   Nebarti
+   Copyright © 2012. All rights reserved.
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>Nebarti - Book Reviews</title>
+        <link rel="shortcut icon" href="../images/favicon.ico"/>
+        <meta name="keywords" content="" />
+        <meta name="description" content="" />
+        <link rel="stylesheet" href="../css/style.css" type="text/css" media="screen" />
+        <link rel="stylesheet" href="../css/navigation-menu.css" type="text/css" />
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css" type="text/css"/>
+        <script type="text/javascript" src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script> 
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+        <script type="text/javascript">google.load('visualization', '1.1', {packages: ['corechart', 'controls', 'table']});</script>
+        <script type="text/javascript" src="../js/jquery.form.js"></script>
+        <script type="text/javascript" src="../js/date.js"></script>
+
+        <script type="text/javascript">
+            // handle classifier post request
+            $(document).ready(function() {       
+                var options = { 
+                    target: '#form_result',
+                    success: showResponse,
+                    dataType: 'json',
+                    timeout: 20000
+                };
+                
+                $('#classifyForm').submit (function() {
+                    var reviewTextElement = document.getElementById('reviewText');
+                    
+                    if (reviewTextElement.value == "") {
+                        alert("Enter review text into text area.")
+                        document.getElementById('reviewText').focus();
+                        return false;
+                    }
+                    
+                    $(this).ajaxSubmit(options);
+                    return false;
+                });
+                
+                // for tabs
+                $("#tabs").tabs();
+                
+                // query for current books in db
+                $.get("/services/bookreviews/", { } ,
+                function(bookTitles) {
+                    if (bookTitles.length > 1) {
+                        for (var i in bookTitles) {
+                            if (bookTitles[i] != -1) {
+                                bookTitle = bookTitles[i].title;
+                                var value = parseInt(i) + parseInt(1);
+                                $('#book_list').append('<option value=' + value +'>'+bookTitle+'</option>');                
+                            }
+                        }
+                    } else {
+                        var bookTitle = bookTitle.text;
+                        var value = 1;
+                        $('#book_list').append('<option value=' + value + '>' + bookTitle + '</option>');
+                    }
+                },
+                "json");              
+               
+            });
+                      
+            // show the review classification results         
+            function showResponse(responseText, statusText)  {
+                if (statusText == 'success') {
+                    if ($('input[name=model]:checked').val() == 'nbBookReviews_10000.model.2') {
+                        $('#form_result').html(responseText.classification + '<img src="../images/star.jpg" alt="star" height="42" width="42" /> &nbsp;'); 
+                    } else {
+                        if (responseText.classification == 'pos') {
+                            $('#form_result').html('<img src="../images/thumbs-up.jpg" alt="thumbs-up" height="42" width="42" /> &nbsp;' + responseText.classification);  
+                        } else {
+                            $('#form_result').html('<img src="../images/thumbs-down.jpg" alt="thumbs-up" height="42" width="42" /> &nbsp;' + responseText.classification);                         
+                        }
+                    }
+                } else {
+                    alert('status: ' + statusText + '\n\nOOPS. Something went wrong.');
+                }
+            }
+                     
+            // handle book title selection change 
+            $(function() {
+                $('#book_list').change(function() {
+                    $('#tablechart_div').empty();
+                    $('#line_chart').empty();
+                    $('#line_chart_control').empty();
+                    $('#wordcountchart_div').empty();
+                    $('#coref2').empty();
+                    $('#coref3').empty();
+                    $('#entities').empty();
+                    
+                    $('#reviewTextDialog').dialog('close');
+                    $('#reviewTextDialog').empty();
+                                      
+                    // query for reviews for selected book
+                    $.get("/services/bookreviews/" + $('#book_list option:selected').text(), { } ,
+                    function(reviews) {
+                        bookReviews = reviews;
+                        if ($('#graph_type option:selected').val() == 'line') {
+                            google.setOnLoadCallback(drawLineChart());
+                        } else if ($('#graph_type option:selected').val() == 'confusion') {
+                            google.setOnLoadCallback(drawConfusionMatrix());
+                        } else if ($('#graph_type option:selected').val() == 'wordcount') {
+                            google.setOnLoadCallback(drawWordCountChart())
+                        } else {
+                            google.setOnLoadCallback(drawEntitiesChart());
+                        }
+                    },
+                    "json");
+                
+                });
+            });
+            
+            // handle graph type selection change
+            $(function() {
+                $('#graph_type').change(function() {  
+                    $('#tablechart_div').empty();
+                    $('#line_chart').empty();
+                    $('#line_chart_control').empty();
+                    $('#wordcountchart_div').empty();
+                    $('#coref2').empty();
+                    $('#coref3').empty();
+                    $('#entities').empty();
+                    
+                    if ($('#graph_type option:selected').val() == 'line') {                     
+                        drawLineChart();
+                    } else if ($('#graph_type option:selected').val() == 'confusion') {                       
+                        drawConfusionMatrix();
+                    } else if ($('#graph_type option:selected').val() == 'wordcount') {
+                        drawWordCountChart();
+                    } else {
+                        drawEntitiesChart();
+                    }
+                
+                })
+            });
+            
+            function drawLineChart() {               
+                var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard_div'));
+                
+                var control = new google.visualization.ControlWrapper({
+                    'controlType': 'ChartRangeFilter',
+                    'containerId': 'line_chart_control',
+                    'options': {
+                        'filterColumnIndex': 0,
+                        'ui': {
+                            'chartType': 'LineChart'
+                        },
+                        'chartView': {
+                            'columns': [0, 1, 2]
+                        },
+                        'minRangeSize': 86400000
+                    }
+                });
+                
+                var linechartWrapper = new google.visualization.ChartWrapper({
+                    'chartType': 'LineChart',
+                    'containerId': 'line_chart',
+                    'view': {
+                        'columns': [
+                            {
+                                'calc': function(dataTable, rowIndex) {
+                                    return dataTable.getFormattedValue(rowIndex, 0);
+                                },
+                                'type': 'string'
+                            }, 1, 2]
+                    }
+                });
+                    
+                var data = new google.visualization.DataTable();
+                
+                data.addColumn('date', 'Date');
+                data.addColumn('number', 'Rating');
+                data.addColumn('number', 'Classification');
+
+                var rowMap = {};
+                var classificationsMap = {};
+                var ratingsMap = {};
+                                          
+                for (var i in bookReviews) {
+                    
+                    if (bookReviews[i] != -1) {
+                        var reviewDate = Date.parse(bookReviews[i].reviewDate);                       
+                    
+                        // check if date already has values
+                        if (rowMap[reviewDate] == null) {
+                            var classifications = new Array();
+                            var ratings = new Array();                          
+                            
+                            classifications.push(parseInt(bookReviews[i].classification)); 
+                            ratings.push(parseInt(bookReviews[i].reviewRating));
+                            var row = data.addRow([
+                                reviewDate, 
+                                ratings[0], 
+                                classifications[0]
+                            ]); 
+                            
+                            rowMap[reviewDate] = row;
+                            classificationsMap[reviewDate] = classifications;
+                            ratingsMap[reviewDate] = ratings;
+                            
+                        } else {
+                            var row = rowMap[reviewDate];
+                            var classifications = classificationsMap[reviewDate];
+                            var ratings = ratingsMap[reviewDate]; 
+                            
+                            ratings.push(parseInt(bookReviews[i].reviewRating));
+                            classifications.push(parseInt(bookReviews[i].classification)); 
+                            
+                            data.setValue(row, 1, eval(ratings.join('+'))/ratings.length );
+                            data.setValue(row, 2, eval(classifications.join('+'))/classifications.length );
+                        }                                                  
+                    }
+                }
+                
+                data.sort([{column: 0}])              
+                dashboard.bind(control, linechartWrapper);
+                dashboard.draw(data);
+                
+                google.visualization.events.addListener(linechartWrapper, 'select', function(event) {
+                    var selections = linechartWrapper.getChart().getSelection();
+                    var message = '';
+                    $('#reviewTextDialog').empty(); 
+                    
+                    for (var i in selections) { //should only be one selection for the line chart
+                        var selection = selections[i];
+                        if (selection.row != null && selection.column != null) {
+                            var dateStr = data.getFormattedValue(selection.row, 0);
+                            // message += '{row:' + selection.row + ',column:' + selection.column + '} = ' + dateStr + '\n';
+                            var reviewDate = Date.parseExact(dateStr, "MMM d, yyy");
+                            for(var j in bookReviews) {
+                                if ( reviewDate.equals(Date.parse(bookReviews[j].reviewDate)) ) {
+                                    $('#reviewTextDialog').dialog({title: $('#book_list option:selected').text()});
+                                    var reviewTitle = bookReviews[j].reviewTitle.replace(/_/g, " ");
+                                    message = 
+                                        "<b>Reviewer Author: " + bookReviews[j].reviewerName + "<br/>" +  
+                                        "Reviewer Title: " + reviewTitle + "<br/>" + 
+                                        "Rating: " + bookReviews[j].reviewRating + 
+                                        " Classification: " + bookReviews[j].classification + "<br/></b>" +
+                                        bookReviews[j].text + "<br/><br/>" + message;                                 
+                                }
+                            }
+                            
+                            $('#reviewTextDialog').html(message);  
+                            $('#reviewTextDialog').dialog( "option", "height", 400 )
+                            $('#reviewTextDialog').dialog('open');
+                        } else {
+                           // events not handled
+                        }
+                    }
+               
+                });
+            }
+            
+            function drawConfusionMatrix() {
+                var data = new google.visualization.DataTable();
+                data.addColumn('string', "");
+                data.addColumn('number', '1');
+                data.addColumn('number', '2');
+                data.addColumn('number', '3');
+                data.addColumn('number', '4');
+                data.addColumn('number', '5');
+                data.addRows(5);
+                
+                data.setCell(0, 0, "1");
+                data.setCell(1, 0, "2");
+                data.setCell(2, 0, "3");
+                data.setCell(3, 0, "4");
+                data.setCell(4, 0, "5");
+                
+                data.setProperties(0, 0, {style: 'font-weight: bold'});
+                data.setProperties(1, 0, {style: 'font-weight: bold'});
+                data.setProperties(2, 0, {style: 'font-weight: bold'});
+                data.setProperties(3, 0, {style: 'font-weight: bold'});
+                data.setProperties(4, 0, {style: 'font-weight: bold'});
+                
+                data.setProperties(0, 1, {style: 'border: 1px solid green;'});
+                data.setProperties(1, 2, {style: 'border: 1px solid green;'});
+                data.setProperties(2, 3, {style: 'border: 1px solid green;'});
+                data.setProperties(3, 4, {style: 'border: 1px solid green;'});
+                data.setProperties(4, 5, {style: 'border: 1px solid green;'});
+                
+                var row;
+                var column;
+                for (var i in bookReviews) {
+                    row = parseInt(bookReviews[i].reviewRating) - 1;
+                    column = parseInt(bookReviews[i].classification);
+                    data.setCell(row, column, data.getValue(row, column)+1);       
+                }
+                
+                var chart = new google.visualization.Table(document.getElementById('tablechart_div'));
+                chart.draw(data, {allowHtml:true});
+            }
+            
+            function drawWordCountChart() {
+                var data = new google.visualization.DataTable();
+                data.addColumn('string', 'Word');               
+                data.addColumn('number', 'Count');
+                
+                // query for reviews for selected book
+                $.get("/services/bookreviews/wordcount/" + $('#book_list option:selected').text(), { } ,
+                function(counts) {
+                    var wordcounts = counts;
+                    for (var i in wordcounts) {
+                        data.addRow([wordcounts[i].word, parseInt(wordcounts[i].count)]);
+                        if (i > 50) break;
+                    }
+                    var options = {
+                        title: 'Word Counts',
+                        height: 1000,
+                        width: 850,
+                        yAxis: {
+                            showTextEvery: 1
+                        }
+                    }; 
+                
+                    var chart = new google.visualization.BarChart(document.getElementById('wordcountchart_div'));
+                    chart.draw(data, options);
+                },
+                "json");
+            }
+                
+            function drawEntitiesChart() {
+                var maxRows = 80;
+                
+                var coref2data = new google.visualization.DataTable();
+                coref2data.addColumn('string', "2 Word Co-Reference");
+                
+                var coref3data = new google.visualization.DataTable();
+                coref3data.addColumn('string', '3 Word Co-Reference');
+                
+                var entitiesdata = new google.visualization.DataTable();
+                entitiesdata.addColumn('string', 'Primary Entities');
+
+                $.get("/services/bookreviews/coreferences/" + $('#book_list option:selected').text() + "?count=2", { } ,
+                function(references) {
+                    if (references != null) {
+//                        var coreferences = references.coReference;
+                        var coreferences = references;
+                        
+                        if (coreferences.length == undefined) {
+                            coref2data.addRow([coreferences.words]);
+                        } else {
+                            for (var i in coreferences) {
+                                if (i > maxRows-1) break;
+                                coref2data.addRow([coreferences[i].words]);
+                            }
+                        }
+                    }
+
+                    var chart = new google.visualization.Table(document.getElementById('coref2'));
+                    chart.draw(coref2data, {allowHtml:true});                    
+                },
+                "json");
+                
+                $.get("/services/bookreviews/coreferences/" + $('#book_list option:selected').text() + "?count=3", { } ,
+                function(references) {
+                    if (references != null) {
+                        var coreferences = references;
+                    
+                        if (coreferences.length == undefined) {
+                              coref3data.addRow([coreferences[i].words]);
+                        } else {
+                            for (var i in coreferences) {
+                                if (i > maxRows-1) break;
+                                coref3data.addRow([coreferences[i].words]);
+                            }
+                        }
+                    }
+
+                    var chart = new google.visualization.Table(document.getElementById('coref3'));
+                    chart.draw(coref3data, {allowHtml:true});                                        
+                },
+                "json");
+                
+                $.get("/services/bookreviews/entities/" + $('#book_list option:selected').text(), { } ,
+                function(entities) {
+                    if (entities != null) {
+                        var namedEntities = entities.namedEntity;
+                        var namedEntities = entities;
+                    
+                        if (namedEntities.length == undefined) {
+//                            entitiesdata.setCell(0, 0, namedEntities.type  + ":  " + namedEntities.phrase);
+                              entitiesdata.addRow([namedEntities.type  + ":  " + namedEntities.phrase]);
+                        } else {
+                            for (var i in namedEntities) {
+                                if (i > maxRows-1) break;
+//                                entitiesdata.setCell(parseInt(i), 0, namedEntities[i].type + ":  " + namedEntities[i].phrase);                             
+                                entitiesdata.addRow([namedEntities[i].type + ":  " + namedEntities[i].phrase]);
+                            }
+                        }
+                    }
+                    
+                    var chart = new google.visualization.Table(document.getElementById('entities'));
+                    chart.draw(entitiesdata, {allowHtml:true});                   
+                },
+                "json");
+
+            }
+
+	    $(function() {
+		$( "#reviewTextDialog" ).dialog({ autoOpen: false });
+	    });
+  
+        </script>
+
+    </head>
+    <body>
+        <div id="wrapper">
+            <div id="wrapper2">
+                <div id="header">
+                    <div id="logo">
+                        <h1><a href="/">Nebarti &nbsp; - &nbsp; Social Intelligence</a></h1>
+                    </div>
+                    <div id="menu">
+                        <nav role="navigation">
+                        <ul id="nav">
+                            <li tabindex="0"><a href="#">Tools</a>
+                                <ul class="submenu" tabindex="0">
+                                    <li tabindex="0"><a href="../management/models.html">Models</a></li>
+                                    <li tabindex="0"><a href="../management/visualization.html">Visualization</a></li>
+                                    <li tabindex="0"><a href="../management/supervisedLearning.html">Supervised Learning</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="#">Demos</a></li>
+                            <li><a href="#">About</a></li>
+                            <li><a href="mailto:administrator@idotanalytics.com?Subject=Website%20request">Contact</a></li>
+                        </ul>
+                        </nav>
+                    </div>
+                </div>
+                <!-- end #header -->
+
+                <div id="page">
+                    <div id="tabbedcontent">
+                                           
+                        <!-- start tab group --> 
+                        <div id="tabs">
+                            <h2 class="title">Book Reviews</h2>
+                            <ul>
+                                <li><a href="#analysis-tab">Analysis</a></li>
+                                <li><a href="#classify-tab">Classifiers</a></li>                             
+                            </ul>
+
+                            <div id="classify-tab">
+
+                                <!-- begin classifier form -->
+                                
+                                    <form id="classifyForm" action="/services/textanalyzer/categorize" method="post">
+                                        <fieldset>
+                                            <legend>Analyze Text</legend>
+                                            <ul>
+                                                <li>
+                                                    <textarea name="reviewText" id="reviewText" cols="60" rows="5"></textarea><br />
+                                                </li>
+                                                <li>
+                                                    <fieldset>
+                                                        <legend>Select model</legend>
+                                                        <input type="radio" name="model" value="nbBookReviews_10000.model.2" id="category" checked="checked"/> 5 Star
+                                                        &nbsp;&nbsp;
+                                                        <input type="radio" name="model" value="nbBookReviews_20000.model" id="polarity" /> Polarity
+                                                    </fieldset>
+                                                </li>
+                                                <li>
+                                                    <br />
+                                                    <input type="submit" value="Classify" />
+                                                </li>
+                                            </ul>
+                                        </fieldset>
+                                    </form>
+
+                                    <div id="form_result"> </div>
+                            
+                                <!-- end classifier form -->
+                            </div>
+
+                            <div id="analysis-tab">
+                                <select id="book_list">
+                                    <option value="" >Select book...</option>
+                                </select>
+                                <select id="graph_type">
+                                    <option value="line" selected="selected">Line Graph</option>
+                                    <option value="confusion">Confusion Matrix</option>
+                                    <option value="wordcount">Word Count</option>
+                                    <option value="coref">Co-reference</option>
+                                </select>
+                                <div id="dashboard_div">
+                                    <div id="wordcountchart_div"></div>
+<!--                                    <div id="coreference_div">-->
+
+                                        <table border="0">
+                                            <tr valign=top>
+                                                <td> <div id="coref2"></div> </td>
+                                                <td> <div id="coref3"></div> </td>
+                                                <td> <div id="entities"></div> </td>
+                                            </tr>
+                                        </table>
+
+                                    <div id="tablechart_div"></div>
+                                    <div id="line_chart"></div>
+                                    <div id="line_chart_control" style='margin-top: 50px; height: 100px'></div>
+                                    <div id="reviewTextDialog"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- end tab group -->
+                        
+                    </div>
+                    <!-- end #tabbedcontent -->
+
+                </div>
+                <!-- end #page -->
+            </div>
+            <!-- end #wrapper2 -->
+            <div id="footer">
+                <span class="copyright">© 2012 Nebarti. All Rights Reserved</span>
+                <span class="links">
+                    -
+                    <a href="#">About</a>
+                    - 
+                    <a href="mailto:administrator@idotanalytics.com?Subject=Website%20request">Contact</a>
+                </span>
+            </div>
+        </div>
+        <!-- end #wrapper -->
+
+    </body>
+</html>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testng-results skipped="0" failed="0" total="4" passed="4">
+  <reporter-output>
+  </reporter-output>
+  <suite name="Command line suite" duration-ms="25" started-at="2013-04-29T00:05:56Z" finished-at="2013-04-29T00:05:56Z">
+    <groups>
+    </groups>
+    <test name="Command line test" duration-ms="25" started-at="2013-04-29T00:05:56Z" finished-at="2013-04-29T00:05:56Z">
+      <class name="com.idot.dataingest.twitter.TwitterProcessorTest">
+        <test-method status="PASS" signature="setUp()[pri:0, instance:com.idot.dataingest.twitter.TwitterProcessorTest@6ee7e2ec]" name="setUp" is-config="true" duration-ms="0" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method status="PASS" signature="cleanUp()[pri:0, instance:com.idot.dataingest.twitter.TwitterProcessorTest@6ee7e2ec]" name="cleanUp" is-config="true" duration-ms="0" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- cleanUp -->
+        <test-method status="PASS" signature="coreTest()[pri:0, instance:com.idot.dataingest.twitter.TwitterProcessorTest@6ee7e2ec]" name="coreTest" duration-ms="0" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- coreTest -->
+      </class> <!-- com.idot.dataingest.twitter.TwitterProcessorTest -->
+      <class name="com.idot.dataingest.wordcount.WordCountSummarizerTest">
+        <test-method status="PASS" signature="setUp()[pri:0, instance:com.idot.dataingest.wordcount.WordCountSummarizerTest@7194b34a]" name="setUp" is-config="true" duration-ms="1" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method status="PASS" signature="cleanUp()[pri:0, instance:com.idot.dataingest.wordcount.WordCountSummarizerTest@7194b34a]" name="cleanUp" is-config="true" duration-ms="1" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- cleanUp -->
+        <test-method status="PASS" signature="summarizeWordCountsTest()[pri:0, instance:com.idot.dataingest.wordcount.WordCountSummarizerTest@7194b34a]" name="summarizeWordCountsTest" duration-ms="0" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- summarizeWordCountsTest -->
+      </class> <!-- com.idot.dataingest.wordcount.WordCountSummarizerTest -->
+      <class name="com.idot.dataingest.twitter.AccessTokenHandlerTest">
+        <test-method status="PASS" signature="setUp()[pri:0, instance:com.idot.dataingest.twitter.AccessTokenHandlerTest@3f6fc94f]" name="setUp" is-config="true" duration-ms="8" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method status="PASS" signature="authTest()[pri:0, instance:com.idot.dataingest.twitter.AccessTokenHandlerTest@3f6fc94f]" name="authTest" duration-ms="0" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- authTest -->
+        <test-method status="PASS" signature="cleanUp()[pri:0, instance:com.idot.dataingest.twitter.AccessTokenHandlerTest@3f6fc94f]" name="cleanUp" is-config="true" duration-ms="1" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- cleanUp -->
+      </class> <!-- com.idot.dataingest.twitter.AccessTokenHandlerTest -->
+      <class name="com.idot.dataingest.twitter.TwitterProcessorExecutorServiceTest">
+        <test-method status="PASS" signature="serviceTest()[pri:0, instance:com.idot.dataingest.twitter.TwitterProcessorExecutorServiceTest@39e32cd6]" name="serviceTest" duration-ms="1" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- serviceTest -->
+        <test-method status="PASS" signature="setUp()[pri:0, instance:com.idot.dataingest.twitter.TwitterProcessorExecutorServiceTest@39e32cd6]" name="setUp" is-config="true" duration-ms="0" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method status="PASS" signature="cleanUp()[pri:0, instance:com.idot.dataingest.twitter.TwitterProcessorExecutorServiceTest@39e32cd6]" name="cleanUp" is-config="true" duration-ms="0" started-at="2013-04-28T18:05:56Z" finished-at="2013-04-28T18:05:56Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- cleanUp -->
+      </class> <!-- com.idot.dataingest.twitter.TwitterProcessorExecutorServiceTest -->
+    </test> <!-- Command line test -->
+  </suite> <!-- Command line suite -->
+</testng-results>

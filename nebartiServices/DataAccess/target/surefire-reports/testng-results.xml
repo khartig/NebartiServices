@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testng-results skipped="0" failed="0" total="2" passed="2">
+  <reporter-output>
+  </reporter-output>
+  <suite name="com.nebarti.dataaccess.dao.TwitterAccountDaoTest" duration-ms="726" started-at="2013-04-29T00:06:19Z" finished-at="2013-04-29T00:06:20Z">
+    <groups>
+    </groups>
+    <test name="Command line test" duration-ms="726" started-at="2013-04-29T00:06:19Z" finished-at="2013-04-29T00:06:20Z">
+      <class name="com.nebarti.dataaccess.dao.TwitterAccountDaoTest">
+        <test-method status="PASS" signature="setUp()[pri:0, instance:com.nebarti.dataaccess.dao.TwitterAccountDaoTest@79374ffd]" name="setUp" is-config="true" duration-ms="716" started-at="2013-04-28T18:06:19Z" finished-at="2013-04-28T18:06:20Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method status="PASS" signature="getByUserIDTest()[pri:0, instance:com.nebarti.dataaccess.dao.TwitterAccountDaoTest@79374ffd]" name="getByUserIDTest" duration-ms="0" started-at="2013-04-28T18:06:20Z" finished-at="2013-04-28T18:06:20Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- getByUserIDTest -->
+        <test-method status="PASS" signature="saveTest()[pri:0, instance:com.nebarti.dataaccess.dao.TwitterAccountDaoTest@79374ffd]" name="saveTest" duration-ms="0" started-at="2013-04-28T18:06:20Z" finished-at="2013-04-28T18:06:20Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- saveTest -->
+        <test-method status="PASS" signature="cleanUp()[pri:0, instance:com.nebarti.dataaccess.dao.TwitterAccountDaoTest@79374ffd]" name="cleanUp" is-config="true" duration-ms="0" started-at="2013-04-28T18:06:20Z" finished-at="2013-04-28T18:06:20Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- cleanUp -->
+      </class> <!-- com.nebarti.dataaccess.dao.TwitterAccountDaoTest -->
+    </test> <!-- Command line test -->
+  </suite> <!-- com.nebarti.dataaccess.dao.TwitterAccountDaoTest -->
+</testng-results>

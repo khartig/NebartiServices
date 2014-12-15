@@ -1,0 +1,1 @@
+java -jar ../TwitterClient.jar khartg:s*netter -t "moneyball"
